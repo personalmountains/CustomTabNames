@@ -23,26 +23,21 @@ namespace CustomTabNames
 	public sealed class CustomTabNames : AsyncPackage
 	{
 		public const string Guid = "BEE6C21E-FBF8-49B1-A0F8-89D7DFA732EE";
-		private readonly DTE2 dte;
-		private readonly ServiceProvider sp;
-		private readonly DocumentEvents docEvents;
-		private readonly WindowEvents winEvents;
+
+		private DTE2 dte;
+		private ServiceProvider sp;
+		private DocumentEvents docEvents;
+		private WindowEvents winEvents;
+
+		private VariablesDictionary variables;
 		private int tries = 0;
 		private Timer timer = null;
-		private VariablesDictionary variables;
 
 		private readonly string template =
 			"$(ProjectName ':')$(ParentDir)$(Filename)";
 
 		public CustomTabNames()
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			this.dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
-			this.sp = new ServiceProvider((OLE.Interop.IServiceProvider)dte);
-			this.docEvents = dte.Events.DocumentEvents;
-			this.winEvents = dte.Events.WindowEvents;
-			this.variables = Variables.MakeDictionary();
 		}
 
 		protected override async Task InitializeAsync(
@@ -50,7 +45,14 @@ namespace CustomTabNames
 		{
 			await this.JoinableTaskFactory.SwitchToMainThreadAsync(ct);
 
+			this.dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+			this.sp = new ServiceProvider((OLE.Interop.IServiceProvider)dte);
+			this.docEvents = dte.Events.DocumentEvents;
+			this.winEvents = dte.Events.WindowEvents;
+			this.variables = Variables.MakeDictionary();
+
 			SetEvents();
+			_ = FixAllDocumentsAsync();
 		}
 
 		void SetEvents()
