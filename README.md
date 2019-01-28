@@ -38,5 +38,8 @@ The template string used to generate captions. Defaults to `$(ProjectName ':')$(
 #### Logging
 If true, a new entry 'CustomTabNames' is created in the Output window with logs from this extension. Defaults to `false`.
 
+## Building
+Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `bin/Release/CustomTabNames.vsix`, select the appropriate Visual Studio versions, and install. Tested on 2017 and 2019.
+
 ## License
 CC0 1.0 Universal. This project is in the public domain.
