@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="CustomTabNames.BEE6C21E-FBF8-49B1-A0F8-89D7DFA732EE" Version="1.0" Language="en-US" Publisher="personalmountains" />
+        <Identity Id="CustomTabNames.bee6c21e-fbf8-49b1-a0f8-89d7dfa732ee" Version="1.0" Language="en-US" Publisher="personalmountains" />
         <DisplayName>CustomTabNames</DisplayName>
         <Description xml:space="preserve">Customizes editor tab names</Description>
+        <License>LICENSE.txt</License>
     </Metadata>
     <Installation>
         <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[16.0, 17.0)" />

@@ -37,9 +37,9 @@ namespace CustomTabNames
 
 			var w = (IVsOutputWindow)wo;
 
-			var guid = new System.Guid(CustomTabNames.Guid);
+			var guid = new System.Guid(Strings.ExtensionGuid);
 			w.CreatePane(
-				ref guid, "CustomTabNames",
+				ref guid, Strings.ExtensionName,
 				Convert.ToInt32(true), Convert.ToInt32(false));
 
 			w.GetPane(guid, out pane);

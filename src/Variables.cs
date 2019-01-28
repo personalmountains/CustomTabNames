@@ -20,6 +20,8 @@ namespace CustomTabNames
 				{"FullPath",       FullPath},
 				{"FilterPath",     FilterPath},
 				{"ParentFilter",   ParentFilter}
+
+				// update Options.Template description when changing this list
 			};
 		}
 

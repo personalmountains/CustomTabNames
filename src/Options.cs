@@ -20,9 +20,9 @@ namespace CustomTabNames
 
 		public event EventHandler TemplatesChanged, EnabledChanged;
 
-		[Category("General")]
-		[DisplayName("Enabled")]
-		[Description("Enabled")]
+		[Category(Strings.OptionsCategory)]
+		[DisplayName(Strings.OptionEnabled)]
+		[Description(Strings.OptionEnabledDescription)]
 		[DefaultValue(defaultEnabled)]
 		public bool Enabled
 		{
@@ -41,9 +41,9 @@ namespace CustomTabNames
 			}
 		}
 
-		[Category("General")]
-		[DisplayName("Template")]
-		[Description("Template")]
+		[Category(Strings.OptionsCategory)]
+		[DisplayName(Strings.OptionTemplate)]
+		[Description(Strings.OptionTemplateDescription)]
 		[DefaultValue(defaultTemplate)]
 		public string Template
 		{
@@ -64,9 +64,9 @@ namespace CustomTabNames
 			}
 		}
 
-		[Category("General")]
-		[DisplayName("Logging")]
-		[Description("Logging")]
+		[Category(Strings.OptionsCategory)]
+		[DisplayName(Strings.OptionLogging)]
+		[Description(Strings.OptionLoggingDescription)]
 		[DefaultValue(defaultLogging)]
 		public bool Logging
 		{
