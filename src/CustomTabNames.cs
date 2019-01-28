@@ -60,7 +60,7 @@ namespace CustomTabNames
 			}
 		}
 
-		Options Options
+		public Options Options
 		{
 			get
 			{

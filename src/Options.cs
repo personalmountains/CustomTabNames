@@ -11,8 +11,12 @@ namespace CustomTabNames
 		private const string defaultTemplate =
 			"$(ProjectName ':')$(ParentDir)$(Filename)";
 
+		private const bool defaultLogging = false;
+
 		private bool enabled = defaultEnabled;
 		private string template = defaultTemplate;
+		private bool logging = defaultLogging;
+
 		public event EventHandler TemplatesChanged, EnabledChanged;
 
 		[Category("General")]
@@ -58,5 +62,23 @@ namespace CustomTabNames
 				}
 			}
 		}
+
+		[Category("General")]
+		[DisplayName("Logging")]
+		[Description("Logging")]
+		[DefaultValue(defaultLogging)]
+		public bool Logging
+		{
+			get
+			{
+				return logging;
+			}
+
+			set
+			{
+				logging = value;
+			}
+		}
+
 	}
 }

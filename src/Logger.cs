@@ -13,6 +13,9 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			if (!CustomTabNames.Instance.Options.Logging)
+				return;
+
 			if (!CheckPane())
 				return;
 
