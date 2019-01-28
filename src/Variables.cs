@@ -14,10 +14,12 @@ namespace CustomTabNames
 		{
 			return new VariablesDictionary()
 			{
-				{"ProjectName", ProjectName},
-				{"ParentDir",   ParentDir},
-				{"Filename",    Filename},
-				{"FullPath",    FullPath}
+				{"ProjectName",    ProjectName},
+				{"ParentDir",      ParentDir},
+				{"Filename",       Filename},
+				{"FullPath",       FullPath},
+				{"FilterPath",     FilterPath},
+				{"ParentFilter",   ParentFilter}
 			};
 		}
 
@@ -74,6 +76,42 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			return d.FullName;
+		}
+
+		public static string FilterPath(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var pi = d?.ProjectItem;
+			var s = "";
+
+			while (pi != null)
+			{
+				var p = pi.Collection?.Parent;
+				if (p is ProjectItem)
+					pi = (ProjectItem)p;
+				else
+					break;
+
+				if (s != "")
+					s = "/" + s;
+
+				s = pi.Name + s;
+			}
+
+			return s;
+		}
+
+		public static string ParentFilter(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var p = d?.ProjectItem?.Collection?.Parent;
+
+			if (p is ProjectItem)
+				return ((ProjectItem)p).Name;
+
+			return "";
 		}
 	}
 }

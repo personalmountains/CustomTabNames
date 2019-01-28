@@ -303,7 +303,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			string s = Options.Template;
-			var re = new Regex(@"\$\((.*?)\s*(?:'(.*)')?\)");
+			var re = new Regex(@"\$\((.*?)\s*(?:'(.*?)')?\)");
 
 			Logger.Log(
 				"making caption for {0} using template {1}",
