@@ -16,12 +16,12 @@ namespace CustomTabNames
 	using VariablesDictionary = Dictionary<string, Func<Document, string>>;
 
 	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
-	[InstalledProductRegistration("#100", "#101", "1.0")]
+	[InstalledProductRegistration("CustomTabNames", "Customizes editor tab names", "1.0")]
 	[ProvideService(typeof(CustomTabNames), IsAsyncQueryable = true)]
 	[ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideOptionPage(typeof(Options), "CustomTabNames", "General", 0, 0, true)]
-	[ProvideProfileAttribute(typeof(Options), "CustomTabNames", "General", 200, 201, isToolsOptionPage: true, DescriptionResourceID = 202)]
+	[ProvideProfileAttribute(typeof(Options), "CustomTabNames", "General", 0, 0, isToolsOptionPage: true)]
 	[Guid(CustomTabNames.Guid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
