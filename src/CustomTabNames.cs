@@ -16,9 +16,12 @@ namespace CustomTabNames
 	using VariablesDictionary = Dictionary<string, Func<Document, string>>;
 
 	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
+	[InstalledProductRegistration("#100", "#101", "1.0")]
 	[ProvideService(typeof(CustomTabNames), IsAsyncQueryable = true)]
 	[ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
+	[ProvideOptionPage(typeof(Options), "CustomTabNames", "General", 0, 0, true)]
+	[ProvideProfileAttribute(typeof(Options), "CustomTabNames", "General", 200, 201, isToolsOptionPage: true, DescriptionResourceID = 202)]
 	[Guid(CustomTabNames.Guid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
@@ -32,12 +35,37 @@ namespace CustomTabNames
 		private VariablesDictionary variables;
 		private int tries = 0;
 		private Timer timer = null;
+		private bool started = false;
 
-		private readonly string template =
-			"$(ProjectName ':')$(ParentDir)$(Filename)";
+		private static CustomTabNames instance = null;
 
 		public CustomTabNames()
 		{
+			instance = this;
+		}
+
+		public static CustomTabNames Instance
+		{
+			get
+			{
+				return instance;
+			}
+		}
+
+		public ServiceProvider ServiceProvider
+		{
+			get
+			{
+				return sp;
+			}
+		}
+
+		Options Options
+		{
+			get
+			{
+				return (Options)GetDialogPage(typeof(Options));
+			}
 		}
 
 		protected override async Task InitializeAsync(
@@ -51,22 +79,72 @@ namespace CustomTabNames
 			this.winEvents = dte.Events.WindowEvents;
 			this.variables = Variables.MakeDictionary();
 
-			SetEvents();
-			_ = FixAllDocumentsAsync();
+			// this never gets removed
+			Options.EnabledChanged += OnEnabledChanged;
+
+			Logger.Log("initialized");
+			Start();
 		}
 
-		void SetEvents()
+		public void Start()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("starting");
+
+			if (started)
+			{
+				Logger.Log("already started");
+				return;
+			}
+
+			started = true;
+			SetEvents(true);
+			FixAllDocumentsAsync();
+		}
+
+		public void Stop()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("stopping");
+
+			if (!started)
+			{
+				Logger.Log("already stopped");
+				return;
+			}
+
+			started = false;
+			SetEvents(false);
+
+			FixAllDocuments();
+		}
+
+		void SetEvents(bool add)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			docEvents.DocumentOpened += (d) => { OnDocumentOpened(d); };
-			winEvents.WindowCreated += (w) => { OnWindowCreated(w); };
-			winEvents.WindowActivated += (got, lost) => { OnWindowActivated(got, lost); };
+			if (add)
+			{
+				Logger.Log("adding events");
+				docEvents.DocumentOpened += OnDocumentOpened;
+				winEvents.WindowCreated += OnWindowCreated;
+				winEvents.WindowActivated += OnWindowActivated;
+				Options.TemplatesChanged += OnTemplatesChanged;
+			}
+			else
+			{
+				Logger.Log("removing events");
+				docEvents.DocumentOpened -= OnDocumentOpened;
+				winEvents.WindowCreated -= OnWindowCreated;
+				winEvents.WindowActivated -= OnWindowActivated;
+				Options.TemplatesChanged -= OnTemplatesChanged;
+			}
 		}
 
 		private void OnDocumentOpened(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("document opened: {0}", d.FullName);
 
 			if (!FixCaption(d))
 				Defer();
@@ -75,28 +153,69 @@ namespace CustomTabNames
 		private void OnWindowCreated(Window w)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("window created: {0}", w.Caption);
 
-			if (w.Document != null)
+			if (w.Document == null)
 			{
-				if (!FixCaption(w.Document))
-					Defer();
+				Logger.Log("not a document");
+				return;
 			}
+
+			if (!FixCaption(w.Document))
+				Defer();
 		}
 
 		private void OnWindowActivated(Window w, Window lost)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("window activated: {0}", w.Caption);
 
-			if (w.Document != null)
+			if (w.Document == null)
 			{
-				if (!FixCaption(w.Document))
-					Defer();
+				Logger.Log("not a document");
+				return;
 			}
+
+			if (!FixCaption(w.Document))
+				Defer();
+		}
+
+		private void OnTemplatesChanged(object s, EventArgs a)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("template options changed");
+
+			FixAllDocumentsAsync();
+		}
+
+		private void OnEnabledChanged(object s, EventArgs a)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("enabled option changed");
+
+			if (Options.Enabled)
+				Start();
+			else
+				Stop();
+		}
+
+		private void FixAllDocumentsAsync()
+		{
+			_ = FixAllDocumentsImplAsync();
+		}
+
+		private async Task FixAllDocumentsImplAsync()
+		{
+			await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+			tries = 0;
+			FixAllDocuments();
 		}
 
 		private void FixAllDocuments()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("fixing all documents");
 
 			bool failed = false;
 
@@ -109,6 +228,8 @@ namespace CustomTabNames
 			if (failed)
 			{
 				++tries;
+				Logger.Log("fixing all documents failed, try {0}", tries);
+
 				if (tries == 10)
 					return;
 
@@ -122,11 +243,21 @@ namespace CustomTabNames
 
 			var f = DocumentFrame(d);
 			if (f == null)
+			{
+				Logger.Log("document {0} has no frame", d.FullName);
 				return false;
+			}
 
-			var caption = MakeCaption(d);
-			if (caption != null)
-				SetCaption(f, caption);
+			if (Options.Enabled)
+			{
+				var caption = MakeCaption(d);
+				if (caption != null)
+					SetCaption(f, caption);
+			}
+			else
+			{
+				SetCaption(f, d.Name);
+			}
 
 			return true;
 		}
@@ -136,23 +267,23 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			if (timer == null)
+			{
+				Logger.Log("deferring");
 				timer = new Timer(OnTimer, null, 2000, Timeout.Infinite);
+			}
 			else
+			{
+				Logger.Log("deferring, timer already started");
 				timer.Change(2000, Timeout.Infinite);
+			}
 		}
 
 		private void OnTimer(object o)
 		{
+			// not on main thread
+
 			timer = null;
-			_ = FixAllDocumentsAsync();
-		}
-
-		private async Task FixAllDocumentsAsync()
-		{
-			await JoinableTaskFactory.SwitchToMainThreadAsync();
-
-			tries = 0;
-			FixAllDocuments();
+			FixAllDocumentsAsync();
 		}
 
 		private IVsWindowFrame DocumentFrame(Document d)
@@ -171,8 +302,12 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var s = template;
+			string s = Options.Template;
 			var re = new Regex(@"\$\((.*?)\s*(?:'(.*)')?\)");
+
+			Logger.Log(
+				"making caption for {0} using template {1}",
+				d.FullName, s);
 
 			while (true)
 			{
@@ -183,20 +318,31 @@ namespace CustomTabNames
 				var name = m.Groups[1].Value;
 				var text = m.Groups[2].Value;
 
-				var v = variables[name];
+				string replacement = "";
 
-				// not found
-				if (v == null)
-					continue;
+				if (variables.TryGetValue(name, out var v))
+				{
+					replacement = v(d);
 
-				string replacement = v(d);
+					// don't append the text if the result was empty
+					if (replacement != "")
+						replacement += text;
 
-				// don't append the text if the result was empty
-				if (replacement != "")
-					replacement += text;
+					Logger.Log(
+						"  . variable {0} replaced by '{1}'",
+						name, replacement);
+				}
+				else
+				{
+					// not found, put the variable name to notify the user
+					Logger.Log("  . variable {0} not found", name);
+					replacement = name;
+				}
 
 				s = Replace(s, m, replacement);
 			}
+
+			Logger.Log("  . caption is now {0}", s);
 
 			return s;
 		}
