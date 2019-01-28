@@ -4,6 +4,7 @@ using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
 {
+	[System.ComponentModel.DesignerCategory("")]
 	public class Options : DialogPage
 	{
 		private const bool defaultEnabled = true;
