@@ -1,0 +1,42 @@
+This extension allows for changing the caption on editor tabs based on a template. The template can be changed in the Options, under the item "CustomTabNames".
+
+## Template
+The template is made of variables with the form `$(VariableName)`. Those are replaced by the appropriate value. Anything outside variables is kept verbatim.
+
+Variables can also contain a single-quoted string: `$(VariableName 'string')`. The string will be appended to the variable expansion if it is not empty. This is useful for putting a separator only if the variable is not empty. For example, `$(ProjectName):$(Filename)` will expand to `project:file.ext` if the file is in a project, but to `:file.exe` if it's not. Putting the colon inside the variable name fixes it: `$(ProjectName ':')$(Filename)` exapands to `file.exe` if the file is not in a project.
+
+## Variables
+These variables can be used in the template:
+
+#### `ProjectName`
+Name of the project that owns the document.
+
+#### `ParentDir`
+Name of the parent directory of the document. Can be empty.
+
+#### `Filename`
+Filename of the document.
+
+#### `FullPath`
+Full, absolute path of the document.
+
+#### `FilterPath`
+All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Can be empty.
+
+#### `ParentFilter`
+Parent filter of the document. Can be empty.
+
+## Options
+Options are under the item 'CustomTabNames' in the Options dialog.
+
+#### Enabled
+If false, all tabs are restored to showing the filename. Defaults to `true`.
+
+#### Template
+The template string used to generate captions. Defaults to `$(ProjectName ':')$(ParentDir)$(Filename)`.
+
+#### Logging
+If true, a new entry 'CustomTabNames' is created in the Output window with logs from this extension. Defaults to `false`.
+
+## License
+CC0 1.0 Universal. This project is in the public domain.
