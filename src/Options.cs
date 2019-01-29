@@ -4,26 +4,39 @@ using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
 {
+	// stores all options and provides a DialogPage that can be displayed in
+	// the options dialog
+	//
+	// DesignerCategory("") is because Visual Studio keeps trying to show a
+	// designer window for this on double-click, but it gives errors and is
+	// useless in any case; this forces a code view
+	//
 	[System.ComponentModel.DesignerCategory("")]
 	public class Options : DialogPage
 	{
-		private const bool defaultEnabled = true;
+		struct Defaults
+		{
+			public const bool Enabled = true;
+			public const string Template =
+				"$(ProjectName ':')$(ParentDir)$(Filename)";
+			public const bool Logging = false;
+		}
 
-		private const string defaultTemplate =
-			"$(ProjectName ':')$(ParentDir)$(Filename)";
+		private bool enabled    = Defaults.Enabled;
+		private string template = Defaults.Template;
+		private bool logging    = Defaults.Logging;
 
-		private const bool defaultLogging = false;
 
-		private bool enabled = defaultEnabled;
-		private string template = defaultTemplate;
-		private bool logging = defaultLogging;
+		public delegate void Handler();
 
-		public event EventHandler TemplateChanged, EnabledChanged;
+		// fired when the various options change
+		public event Handler EnabledChanged, TemplateChanged, LoggingChanged;
+
 
 		[Category(Strings.OptionsCategory)]
 		[DisplayName(Strings.OptionEnabled)]
 		[Description(Strings.OptionEnabledDescription)]
-		[DefaultValue(defaultEnabled)]
+		[DefaultValue(Defaults.Enabled)]
 		public bool Enabled
 		{
 			get
@@ -36,7 +49,7 @@ namespace CustomTabNames
 				if (enabled != value)
 				{
 					enabled = value;
-					EnabledChanged?.Invoke(this, EventArgs.Empty);
+					EnabledChanged?.Invoke();
 				}
 			}
 		}
@@ -44,7 +57,7 @@ namespace CustomTabNames
 		[Category(Strings.OptionsCategory)]
 		[DisplayName(Strings.OptionTemplate)]
 		[Description(Strings.OptionTemplateDescription)]
-		[DefaultValue(defaultTemplate)]
+		[DefaultValue(Defaults.Template)]
 		public string Template
 		{
 			get
@@ -54,12 +67,12 @@ namespace CustomTabNames
 
 			set
 			{
-				var v = (value == "" ? defaultTemplate : value);
+				var v = (value == "" ? Defaults.Template : value);
 
 				if (template != v)
 				{
 					template = value;
-					TemplateChanged?.Invoke(this, EventArgs.Empty);
+					TemplateChanged?.Invoke();
 				}
 			}
 		}
@@ -67,7 +80,7 @@ namespace CustomTabNames
 		[Category(Strings.OptionsCategory)]
 		[DisplayName(Strings.OptionLogging)]
 		[Description(Strings.OptionLoggingDescription)]
-		[DefaultValue(defaultLogging)]
+		[DefaultValue(Defaults.Logging)]
 		public bool Logging
 		{
 			get
@@ -77,7 +90,11 @@ namespace CustomTabNames
 
 			set
 			{
-				logging = value;
+				if (logging != value)
+				{
+					logging = value;
+					LoggingChanged?.Invoke();
+				}
 			}
 		}
 

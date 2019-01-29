@@ -20,7 +20,7 @@ namespace CustomTabNames
 			{"FilterPath",     FilterPath},
 			{"ParentFilter",   ParentFilter}
 
-			// update Options.Template description when changing this list
+			// update Strings.OptionTemplateDescription when changing this list
 		};
 
 

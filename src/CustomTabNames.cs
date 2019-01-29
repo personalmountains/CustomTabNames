@@ -124,7 +124,7 @@ namespace CustomTabNames
 		// fired when the template option changed, fixes all currently opened
 		// documents
 		//
-		private void OnTemplateChanged(object s, EventArgs a)
+		private void OnTemplateChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -137,7 +137,7 @@ namespace CustomTabNames
 
 		// fired when the enabled option changed, either starts or stops
 		//
-		private void OnEnabledChanged(object s, EventArgs a)
+		private void OnEnabledChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("enabled option changed");
