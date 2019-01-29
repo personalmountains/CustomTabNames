@@ -5,7 +5,7 @@ This extension allows for changing the caption on editor tabs based on a templat
 ## Template
 The template is made of variables with the form `$(VariableName)`. Those are replaced by the appropriate value. Anything outside variables is kept verbatim.
 
-Variables can also contain a single-quoted string: `$(VariableName 'string')`. The string will be appended to the variable expansion if it is not empty. This is useful for putting a separator only if the variable is not empty. For example, `$(ProjectName):$(Filename)` will expand to `project:file.ext` if the file is in a project, but to `:file.exe` if it's not. Putting the colon inside the variable name fixes it: `$(ProjectName ':')$(Filename)` exapands to `file.exe` if the file is not in a project.
+Variables can also contain a single-quoted string: `$(VariableName 'string')`. The string will be appended to the variable expansion if it is not empty. This is useful for putting a separator only if the variable is not empty. For example, `$(ProjectName):$(Filename)` will expand to `project:file.ext` if the file is in a project, but to `:file.exe` if it's not. Putting the colon inside the variable name fixes it: `$(ProjectName ':')$(Filename)` expands to `file.exe` if the file is not in a project.
 
 ## Variables
 These variables can be used in the template:
@@ -36,11 +36,14 @@ Options are under the item 'CustomTabNames' in the Options dialog.
 #### Enabled
 If false, all tabs are restored to showing the filename. Defaults to `true`.
 
-#### Template
-The template string used to generate captions. Defaults to `$(ProjectName ':')$(ParentDir)$(Filename)`.
+#### Ignore builtin projects
+Some items are under dummy projects. For example, opening a file that's not in the solution puts it under a project named "Miscellaneous files", which would appear with `$(ProjectName)`. When `true`, these dummy projects are ignored and `$(ProjectName)` will expand to an empty string. Defaults to `true`.
 
 #### Logging
 If true, a new entry 'CustomTabNames' is created in the Output window with logs from this extension. Defaults to `false`.
+
+#### Template
+The template string used to generate captions. Defaults to `$(ProjectName ':')$(ParentDir)$(Filename)`.
 
 ## Building
 Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `bin/Release/CustomTabNames.vsix`, select the appropriate Visual Studio versions, and install. Tested on 2017 and 2019.

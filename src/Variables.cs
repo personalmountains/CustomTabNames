@@ -25,6 +25,15 @@ namespace CustomTabNames
 			// update Strings.OptionTemplateDescription when changing this list
 		};
 
+		// built-in projects that can be ignored
+		//
+		public static List<string> BuiltinProjects = new List<string>()
+		{
+			Constants.vsProjectKindMisc,
+			Constants.vsProjectKindSolutionItems,
+			Constants.vsProjectKindUnmodeled
+		};
+
 
 		// expands all variables on the given template
 		//
@@ -115,11 +124,17 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var pname = d?.ProjectItem?.ContainingProject?.Name;
-			if (pname == null)
+			var p = d?.ProjectItem?.ContainingProject;
+			if (p == null)
 				return "";
 
-			return pname;
+			if (CustomTabNames.Instance.Options.IgnoreBuiltinProjects)
+			{
+				if (BuiltinProjects.Contains(p.Kind))
+					return "";
+			}
+
+			return p.Name;
 		}
 
 		// returns the parent directory of the document's file with a slash at

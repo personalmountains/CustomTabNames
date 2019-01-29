@@ -36,6 +36,11 @@
 			"variable will only be added if the variable expansion is not " +
 			"empty.";
 
+		public const string OptionIgnoreBuiltinProjects =
+			"Ignore builtin projects";
+		public const string OptionIgnoreBuiltinProjectsDescription =
+			"Don't display builtin project names like 'Miscellaneous Files'";
+
 		public const string OptionLogging = "Logging";
 		public const string OptionLoggingDescription =
 			"Whether logging to output window is enabled";

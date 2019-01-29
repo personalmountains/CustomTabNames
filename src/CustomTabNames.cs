@@ -85,6 +85,7 @@ namespace CustomTabNames
 			Options = (Options)GetDialogPage(typeof(Options));
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplateChanged += OnTemplateChanged;
+			Options.IgnoreBuiltinProjectsChanged += OnIgnoreBuiltinProjectsChanged;
 
 			if (Options.Enabled)
 			{
@@ -146,7 +147,7 @@ namespace CustomTabNames
 			if (!Options.Enabled)
 				return;
 
-			Logger.Log("template options changed");
+			Logger.Log("template option changed");
 			FixAllDocuments();
 		}
 
@@ -161,6 +162,20 @@ namespace CustomTabNames
 				Start();
 			else
 				Stop();
+		}
+
+		// fired when the ignore builtin projects option changed, fixes all
+		// currently opened documents
+		//
+		private void OnIgnoreBuiltinProjectsChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (!Options.Enabled)
+				return;
+
+			Logger.Log("ignore builtin projects option changed");
+			FixAllDocuments();
 		}
 
 		// fired when a document or window has been opened
