@@ -1,5 +1,7 @@
 This extension allows for changing the caption on editor tabs based on a template. The template can be changed in the Options, under the item "CustomTabNames".
 
+![Screenshot of some tabs](docs/Tabs.png)
+
 ## Template
 The template is made of variables with the form `$(VariableName)`. Those are replaced by the appropriate value. Anything outside variables is kept verbatim.
 
@@ -28,6 +30,8 @@ Parent filter of the document. Can be empty.
 
 ## Options
 Options are under the item 'CustomTabNames' in the Options dialog.
+
+![Screenshot of the Options dialog](docs/Options.png)
 
 #### Enabled
 If false, all tabs are restored to showing the filename. Defaults to `true`.
