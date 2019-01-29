@@ -17,18 +17,13 @@ namespace CustomTabNames
 	//
 	public sealed class DocumentWrapper
 	{
-		private readonly Document document;
-		private readonly IVsWindowFrame frame;
+		public Document Document { get; private set; }
+		private IVsWindowFrame Frame { get; set; }
 
 		public DocumentWrapper(Document d, IVsWindowFrame f)
 		{
-			document = d;
-			frame = f;
-		}
-
-		public Document Document
-		{
-			get;
+			Document = d;
+			Frame = f;
 		}
 
 		// sets the caption of this document to the given string
@@ -38,14 +33,14 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			// fail without frame
-			if (frame == null)
+			if (Frame == null)
 				return false;
 
 			// the visible caption is made of a combination of the EditorCaption
 			// and OwnerCaption; setting the EditorCaption to null makes sure
 			// the caption can be controlled uniquely by OwnerCaption
-			frame.SetProperty((int)VsFramePropID.EditorCaption, null);
-			frame.SetProperty((int)VsFramePropID.OwnerCaption, s);
+			Frame.SetProperty((int)VsFramePropID.EditorCaption, null);
+			Frame.SetProperty((int)VsFramePropID.OwnerCaption, s);
 
 			return true;
 		}
@@ -59,7 +54,7 @@ namespace CustomTabNames
 			// todo: it'd be nice to set the caption back to a default value
 			// instead of hardcoding the name, but there doesn't seem to be a
 			// way to do that
-			SetCaption(document.Name);
+			SetCaption(Document.Name);
 		}
 	}
 

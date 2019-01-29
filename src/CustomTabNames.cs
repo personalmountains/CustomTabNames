@@ -32,6 +32,7 @@ namespace CustomTabNames
 		// started by Defer() when at least when document didn't have a frame,
 		// see Defer()
 		private Timer timer = null;
+		private readonly object timerLock = new object();
 
 		// whether Start() has already been called
 		private bool started = false;
@@ -236,7 +237,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			lock (timer)
+			lock (timerLock)
 			{
 				if (timer == null)
 				{
@@ -261,7 +262,7 @@ namespace CustomTabNames
 		{
 			// careful: not on main thread
 
-			lock (timer)
+			lock (timerLock)
 			{
 				timer = null;
 			}
@@ -280,7 +281,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var caption = Variables.MakeCaption(d.Document, Options.Template);
+			var caption = Variables.Expand(d.Document, Options.Template);
 			return d.SetCaption(caption);
 		}
 	}
