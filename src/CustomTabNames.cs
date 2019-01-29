@@ -280,7 +280,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var caption = Variables.MakeCaption(d.document, Options.Template);
+			var caption = Variables.MakeCaption(d.Document, Options.Template);
 			return d.SetCaption(caption);
 		}
 	}
