@@ -5,9 +5,23 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
 using EnvDTE80;
-using System.Collections.Generic;
 using Task = System.Threading.Tasks.Task;
 using OLE = Microsoft.VisualStudio.OLE;
+
+// the CustomTabNames class is the package; it starts the DocumentManager,
+// waits for events and calls FixCaption() on documents
+//
+// the DocumentManager class registers events like opening documents and
+// notifies CustomTabNames that a document caption needs fixing
+//
+// Logger has simple static functions to log strings to the output window and
+// Strings has most of the localizable strings
+//
+// Options has all the options and acts as a DialogPage that can be shown in the
+// options dialog
+//
+// Variables has all available variables and can expand them based on a template
+// and a document
 
 namespace CustomTabNames
 {

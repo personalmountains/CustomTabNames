@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace CustomTabNames
+﻿namespace CustomTabNames
 {
 	// some strings like ExtensionName and ExtensionDescription are used in
 	// various places (CustomTabNames.cs, AssemblyInfo.cs, etc.); others are
