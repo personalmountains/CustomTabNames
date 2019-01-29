@@ -158,8 +158,8 @@ namespace CustomTabNames
 		}
 
 		// walks the filter up from the document to the project root and joins
-		// them with slashes, or an empty string if the document is directly in
-		// the project root
+		// them with slashes and appends a slash at the end, or returns an empty
+		// string if the document is directly in the project root
 		//
 		public static string FilterPath(Document d)
 		{
@@ -183,10 +183,7 @@ namespace CustomTabNames
 					break;
 				}
 
-				if (s != "")
-					s = "/" + s;
-
-				s = item.Name + s;
+				s = item.Name + "/" + s;
 			}
 
 			return s;
