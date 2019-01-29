@@ -25,36 +25,19 @@ namespace CustomTabNames
 	[Guid(Strings.ExtensionGuid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
-		private ServiceProvider sp;
-
 		private DocumentManager manager;
 		private VariablesDictionary variables;
 		private int tries = 0;
 		private Timer timer = null;
 		private bool started = false;
 
-		private static CustomTabNames instance = null;
-
 		public CustomTabNames()
 		{
-			instance = this;
+			Instance = this;
 		}
 
-		public static CustomTabNames Instance
-		{
-			get
-			{
-				return instance;
-			}
-		}
-
-		public ServiceProvider ServiceProvider
-		{
-			get
-			{
-				return sp;
-			}
-		}
+		public static CustomTabNames Instance { get; private set; }
+		public ServiceProvider ServiceProvider { get; private set; }
 
 		public Options Options
 		{
@@ -71,16 +54,25 @@ namespace CustomTabNames
 
 			var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
+			this.ServiceProvider = new ServiceProvider(
+				(OLE.Interop.IServiceProvider)dte);
+
 			this.manager = new DocumentManager(dte);
-			this.sp = new ServiceProvider((OLE.Interop.IServiceProvider)dte);
 			this.variables = Variables.MakeDictionary();
 
 			this.manager.DocumentChanged += OnDocumentChanged;
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplatesChanged += OnTemplatesChanged;
 
-			Logger.Log("initialized -");
-			Start();
+			if (Options.Enabled)
+			{
+				Logger.Log("initialized");
+				Start();
+			}
+			else
+			{
+				Logger.Log("initialized but disabled in the options");
+			}
 		}
 
 		public void Start()
