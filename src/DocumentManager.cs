@@ -24,6 +24,12 @@ namespace CustomTabNames
 
 			return true;
 		}
+
+		public void ResetCaption()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			SetCaption(document.Name);
+		}
 	}
 
 

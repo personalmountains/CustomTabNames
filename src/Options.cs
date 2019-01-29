@@ -18,7 +18,7 @@ namespace CustomTabNames
 		private string template = defaultTemplate;
 		private bool logging = defaultLogging;
 
-		public event EventHandler TemplatesChanged, EnabledChanged;
+		public event EventHandler TemplateChanged, EnabledChanged;
 
 		[Category(Strings.OptionsCategory)]
 		[DisplayName(Strings.OptionEnabled)]
@@ -59,7 +59,7 @@ namespace CustomTabNames
 				if (template != v)
 				{
 					template = value;
-					TemplatesChanged?.Invoke(this, EventArgs.Empty);
+					TemplateChanged?.Invoke(this, EventArgs.Empty);
 				}
 			}
 		}
