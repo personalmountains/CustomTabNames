@@ -13,6 +13,9 @@ namespace CustomTabNames
 		public delegate void DocumentMovedHandler(DocumentWrapper d);
 		public event DocumentMovedHandler DocumentMoved;
 
+		public delegate void ContainerNameChangedHandler();
+		public event ContainerNameChangedHandler ContainerNameChanged;
+
 		public IVsHierarchy Hierarchy { get; private set; }
 
 		public HierarchyEventHandlers(IVsHierarchy h)
@@ -44,17 +47,18 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			// when items are moved between filters, they are first deleted
-			// and added again, and itemidSiblingPrev contains the sibling
-			// before the deletion
+			// there's no real way of knowing whether this is called because
+			// an item is moved (delete+add) or a new item is added to the
+			// project
 			//
-			// when new items are added to the project, OnItemDeleted() is
-			// never called and itemidSiblingPrev is Nil
-
-			if (itemidSiblingPrev == (uint)VSConstants.VSITEMID.Nil)
-				return VSConstants.S_OK;
-
-			// item was moved
+			// itemidSiblingPrev looks promising: it's usually Nil for items
+			// that were just added, and not Nil for items that were moved
+			//
+			// but there seems to be a few cases where items are moved and
+			// itemidSiblingPrev is still Nil
+			//
+			// therefore, adding a file might fire twice: once here, and once
+			// in the document events below
 
 			var d = DocumentManager.DocumentFromItemID(Hierarchy, itemidAdded);
 			if (d == null)
@@ -74,6 +78,24 @@ namespace CustomTabNames
 			}
 
 			DocumentMoved?.Invoke(new DocumentWrapper(d, wf));
+
+			return VSConstants.S_OK;
+		}
+
+		public int OnPropertyChanged(uint itemid, int propid, uint flags)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (propid != (int)__VSHPROPID.VSHPROPID_Caption)
+				return VSConstants.S_OK;
+
+			Logger.Trace("OnPropertyChanged caption on {0}", itemid);
+
+			// this catches both renaming projects and files;
+			// todo: this could perhaps be more efficient by only fixing
+			//       documents that are under this filter (if it's a filter)
+			//
+			ContainerNameChanged?.Invoke();
 
 			return VSConstants.S_OK;
 		}
@@ -98,11 +120,6 @@ namespace CustomTabNames
 		{
 			return VSConstants.S_OK;
 		}
-
-		public int OnPropertyChanged(uint itemid, int propid, uint flags)
-		{
-			return VSConstants.S_OK;
-		}
 	}
 
 
@@ -115,6 +132,9 @@ namespace CustomTabNames
 
 		public delegate void DocumentMovedHandler(DocumentWrapper d);
 		public event DocumentMovedHandler DocumentMoved;
+
+		public delegate void ContainerNameChangedHandler();
+		public event ContainerNameChangedHandler ContainerNameChanged;
 
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
 
@@ -189,6 +209,12 @@ namespace CustomTabNames
 			DocumentMoved?.Invoke(d);
 		}
 
+		private void OnContainerNameChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			ContainerNameChanged?.Invoke();
+		}
+
 		private void AddProjectHierarchy(IVsHierarchy h)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -212,7 +238,9 @@ namespace CustomTabNames
 			{
 				var hh = new HierarchyEventHandlers(h);
 				hh.Register();
+
 				hh.DocumentMoved += OnDocumentMoved;
+				hh.ContainerNameChanged += OnContainerNameChanged;
 
 				hierarchyHandlers.Add(cn, hh);
 			}

@@ -5,11 +5,11 @@ using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using Task = System.Threading.Tasks.Task;
 
-// the CustomTabNames class is the package; it starts the DocumentManager,
+// the Package class is the package; it starts the DocumentManager,
 // waits for events and calls FixCaption() on documents
 //
-// the DocumentManager class registers events like opening documents and
-// notifies CustomTabNames that a document caption needs fixing
+// the DocumentManager and class registers events like opening documents and
+// notifies Package that a document caption needs fixing
 //
 // Logger has simple static functions to log strings to the output window and
 // Strings has most of the localizable strings
@@ -111,7 +111,7 @@ namespace CustomTabNames
 			DocumentManager = new DocumentManager();
 
 			DocumentManager.DocumentChanged += OnDocumentChanged;
-			DocumentManager.ProjectsChanged += OnProjectsChanged;
+			DocumentManager.ContainersChanged += OnContainersChanged;
 
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplateChanged += OnTemplateChanged;
@@ -305,10 +305,10 @@ namespace CustomTabNames
 			FixCaption(d);
 		}
 
-		private void OnProjectsChanged()
+		private void OnContainersChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("projects changed");
+			Logger.Log("containers changed");
 			FixAllDocuments();
 		}
 

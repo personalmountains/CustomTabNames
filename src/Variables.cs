@@ -3,7 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CustomTabNames
 {
@@ -84,7 +86,7 @@ namespace CustomTabNames
 				string s = v(d);
 
 				// don't append the text if the result was empty
-				if (s.Length == 0)
+				if (s.Length != 0)
 					s += text;
 
 				Logger.Trace("  . variable {0} replaced by '{1}'", name, s);
@@ -186,26 +188,121 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var s = "";
 
-			// getting the project item associated with the document, may be
-			// null if the document is not in a project
-			var item = d?.ProjectItem;
-
-			while (item != null)
+			var cookie = Package.Instance.RDT4.GetDocumentCookie(d.FullName);
+			if (cookie == VSConstants.VSCOOKIE_NIL)
 			{
-				// getting the item's parent, which can either be a filter or
-				// the project root (or something else?)
-				item = item.Collection?.Parent as ProjectItem;
+				Logger.Error(
+					"FilterPath: GetDocumentCookie for {0} failed",
+					d.FullName);
 
-				if (item == null)
+				return "";
+			}
+
+
+			Package.Instance.RDT4.GetDocumentHierarchyItem(
+				cookie, out var h, out var itemid);
+
+			if (h == null || itemid == (uint)VSConstants.VSITEMID.Nil)
+			{
+				Logger.Error(
+					"FilterPath: GetDocumentHierarchyItem for {0} failed",
+					d.FullName);
+
+				return "";
+			}
+
+
+			var parts = new List<string>();
+
+			while (itemid != (uint)VSConstants.VSITEMID.Nil)
+			{
+				var e = h.GetProperty(
+					itemid, (int)__VSHPROPID.VSHPROPID_Parent,
+					out var parentidObject);
+
+				if (e != VSConstants.S_OK || !(parentidObject is int))
 				{
-					// no more filters
+					Logger.Log(
+						"FilterPath: GetProperty parent for {0} failed, {1}",
+						d.FullName, e);
+
 					break;
 				}
 
-				s = item.Name + "/" + s;
+				var parentid = (uint)(int)parentidObject;
+
+				// no more parent
+				if (parentid == (uint)VSConstants.VSITEMID.Nil)
+					break;
+
+				e = h.GetGuidProperty(
+					parentid, (int)__VSHPROPID.VSHPROPID_TypeGuid,
+					out var type);
+
+				if (e != VSConstants.S_OK || type == null)
+				{
+					Logger.Error(
+						"FilterPath: GetProperty typeguid for {0} failed, {1}",
+						d.FullName, e);
+
+					return "";
+				}
+
+				// ignore anything but folders
+				if (type == VSConstants.ItemTypeGuid.PhysicalFolder_guid ||
+					type == VSConstants.ItemTypeGuid.VirtualFolder_guid)
+				{
+					e = h.GetProperty(
+						parentid, (int)__VSHPROPID.VSHPROPID_Name,
+						out var nameObject);
+
+					if (e != VSConstants.S_OK || !(nameObject is string))
+					{
+						Logger.Error(
+							"FilterPath: GetProperty name for {0} failed, {1}",
+							d.FullName, e);
+
+						return "";
+					}
+
+					parts.Insert(0, (string)nameObject);
+				}
+
+				itemid = parentid;
 			}
+
+
+			if (DocumentManager.IsInBuiltinProject(d))
+			{
+				// sigh
+				//
+				// some of the builtin projects like miscellaneous items seem
+				// to behave both as projects and folders
+				//
+				// the check above for physical/virtual folders works fine for
+				// regular projects, where the root project item doesn't say
+				// it's a folder (cause it ain't)
+				//
+				// but when an external file is opened, it gets put in this
+				// magic miscellaneous items project, which _does_ report its
+				// type as a virtual folder, event though it's the root
+				// "project"
+				//
+				// in any case, if the document is in a builtin project, the
+				// first component is removed, because there doesn't seem to be
+				// any other way to verify it
+
+				if (parts.Count > 0)
+					parts.RemoveAt(0);
+			}
+
+
+			var s = String.Join("/", parts);
+
+			// ending slash
+			if (s.Length > 0)
+				s += "/";
 
 			return s;
 		}

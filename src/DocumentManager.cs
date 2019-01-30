@@ -70,10 +70,10 @@ namespace CustomTabNames
 		public delegate void DocumentChangedHandler(DocumentWrapper d);
 		public event DocumentChangedHandler DocumentChanged;
 
-		// fired when projects are added, removed or renamed
+		// fired when projects or filters are added, removed or renamed
 		//
-		public delegate void ProjectsChangedHandler();
-		public event ProjectsChangedHandler ProjectsChanged;
+		public delegate void ContainersChangedHandler();
+		public event ContainersChangedHandler ContainersChanged;
 
 		private readonly MainThreadTimer projectCountTimer
 			= new MainThreadTimer();
@@ -99,6 +99,7 @@ namespace CustomTabNames
 			docHandlers.DocumentRenamed += OnDocumentChanged;
 			solHandlers.ProjectCountChanged += OnProjectCountChanged;
 			solHandlers.DocumentMoved += OnDocumentChanged;
+			solHandlers.ContainerNameChanged += OnContainerNameChanged;
 		}
 
 		public void Dispose()
@@ -367,7 +368,20 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Trace("project count changed");
-			projectCountTimer.Start(1000, () => { ProjectsChanged?.Invoke(); });
+
+			projectCountTimer.Start(1000, () =>
+			{
+				ContainersChanged?.Invoke();
+			});
+		}
+
+		// fired when filters or projects get renamed
+		//
+		private void OnContainerNameChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("container name changed");
+			ContainersChanged?.Invoke();
 		}
 	}
 }
