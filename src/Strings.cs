@@ -27,7 +27,7 @@
 
 		public const string OptionEnabled = "Enabled";
 		public const string OptionEnabledDescription =
-			"Whether the extension is enabled";
+			"Whether the extension is enabled.";
 
 		public const string OptionTemplate = "Template";
 		public const string OptionTemplateDescription =
@@ -39,10 +39,15 @@
 		public const string OptionIgnoreBuiltinProjects =
 			"Ignore builtin projects";
 		public const string OptionIgnoreBuiltinProjectsDescription =
-			"Don't display builtin project names like 'Miscellaneous Files'";
+			"Don't display builtin project names like 'Miscellaneous Files'.";
+
+		public const string OptionIgnoreSingleProject = "Ignore single project";
+		public const string OptionIgnoreSingleProjectDescription =
+			"Don't expand $(ProjectName) when the solution only has one " +
+			"project.";
 
 		public const string OptionLogging = "Logging";
 		public const string OptionLoggingDescription =
-			"Whether logging to output window is enabled";
+			"Whether logging to output window is enabled.";
 	}
 }

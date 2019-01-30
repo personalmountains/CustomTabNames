@@ -25,14 +25,22 @@ namespace CustomTabNames
 			// update Strings.OptionTemplateDescription when changing this list
 		};
 
-		// built-in projects that can be ignored
-		//
-		public static List<string> BuiltinProjects = new List<string>()
+
+		private static Options Options
 		{
-			Constants.vsProjectKindMisc,
-			Constants.vsProjectKindSolutionItems,
-			Constants.vsProjectKindUnmodeled
-		};
+			get
+			{
+				return CustomTabNames.Instance.Options;
+			}
+		}
+
+		private static DocumentManager DocumentManager
+		{
+			get
+			{
+				return CustomTabNames.Instance.DocumentManager;
+			}
+		}
 
 
 		// expands all variables on the given template
@@ -124,15 +132,21 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			if (Options.IgnoreSingleProject)
+			{
+				if (DocumentManager.HasSingleProject())
+					return "";
+			}
+
+			if (Options.IgnoreBuiltinProjects)
+			{
+				if (DocumentManager.IsInBuiltinProject(d))
+					return "";
+			}
+
 			var p = d?.ProjectItem?.ContainingProject;
 			if (p == null)
 				return "";
-
-			if (CustomTabNames.Instance.Options.IgnoreBuiltinProjects)
-			{
-				if (BuiltinProjects.Contains(p.Kind))
-					return "";
-			}
 
 			return p.Name;
 		}

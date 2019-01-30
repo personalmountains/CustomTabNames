@@ -35,9 +35,6 @@ namespace CustomTabNames
 	[Guid(Strings.ExtensionGuid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
-		// handles document events and allows iterating all opened documents
-		private DocumentManager manager;
-
 		// number of times the defer timer was fired, see Defer()
 		private int tries = 0;
 		private const int MaxTries = 5;
@@ -55,8 +52,9 @@ namespace CustomTabNames
 		// this instance
 		public static CustomTabNames Instance { get; private set; }
 
-		// used by both logging and document manager
+		public DTE2 DTE { get; private set; }
 		public ServiceProvider ServiceProvider { get; private set; }
+		public DocumentManager DocumentManager { get; private set; }
 
 		// options
 		public Options Options { get; private set; }
@@ -72,20 +70,22 @@ namespace CustomTabNames
 		{
 			await this.JoinableTaskFactory.SwitchToMainThreadAsync(ct);
 
-			var dte = Package.GetGlobalService(typeof(DTE)) as DTE2;
+			this.DTE = Package.GetGlobalService(typeof(DTE)) as DTE2;
 
 			this.ServiceProvider = new ServiceProvider(
-				(OLE.Interop.IServiceProvider)dte);
-
-			this.manager = new DocumentManager(dte);
-
-			// fired when documents or windows are opened
-			this.manager.DocumentChanged += OnDocumentChanged;
+				(OLE.Interop.IServiceProvider)this.DTE);
 
 			Options = (Options)GetDialogPage(typeof(Options));
+			this.DocumentManager = new DocumentManager(this.DTE);
+
+			// fired when documents or windows are opened; fixes the caption
+			// for that particular document
+			this.DocumentManager.DocumentChanged += OnDocumentChanged;
+
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplateChanged += OnTemplateChanged;
 			Options.IgnoreBuiltinProjectsChanged += OnIgnoreBuiltinProjectsChanged;
+			Options.IgnoreSingleProjectChanged += OnIgnoreSingleProjectChanged;
 
 			if (Options.Enabled)
 			{
@@ -114,7 +114,7 @@ namespace CustomTabNames
 			}
 
 			started = true;
-			manager.Start();
+			DocumentManager.Start();
 			FixAllDocuments();
 		}
 
@@ -133,7 +133,7 @@ namespace CustomTabNames
 			}
 
 			started = false;
-			manager.Stop();
+			DocumentManager.Stop();
 			ResetAllDocuments();
 		}
 
@@ -178,6 +178,20 @@ namespace CustomTabNames
 			FixAllDocuments();
 		}
 
+		// fired when the ignore single project option changed, fixes all
+		// currently opened documents
+		//
+		private void OnIgnoreSingleProjectChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (!Options.Enabled)
+				return;
+
+			Logger.Log("ignore single project option changed");
+			FixAllDocuments();
+		}
+
 		// fired when a document or window has been opened
 		//
 		private void OnDocumentChanged(DocumentWrapper d)
@@ -210,7 +224,7 @@ namespace CustomTabNames
 
 			bool failed = false;
 
-			manager.ForEachDocument((d) =>
+			DocumentManager.ForEachDocument((d) =>
 			{
 				if (!FixCaption(d))
 					failed = true;
@@ -252,7 +266,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("reseting all documents");
 
-			manager.ForEachDocument((d) =>
+			DocumentManager.ForEachDocument((d) =>
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 				d.ResetCaption();

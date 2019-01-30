@@ -19,12 +19,14 @@ namespace CustomTabNames
 			public const string Template =
 				"$(ProjectName ':')$(ParentDir)$(Filename)";
 			public const bool IgnoreBuiltinProjects = true;
+			public const bool IgnoreSingleProject = true;
 			public const bool Logging = false;
 		}
 
 		private bool enabled = Defaults.Enabled;
 		private string template = Defaults.Template;
 		private bool ignoreBuiltinProjects = Defaults.IgnoreBuiltinProjects;
+		private bool ignoreSingleProject = Defaults.IgnoreSingleProject;
 		private bool logging = Defaults.Logging;
 
 
@@ -32,7 +34,8 @@ namespace CustomTabNames
 
 		// fired when the various options change
 		public event Handler EnabledChanged, TemplateChanged;
-		public event Handler IgnoreBuiltinProjectsChanged, LoggingChanged;
+		public event Handler IgnoreBuiltinProjectsChanged;
+		public event Handler IgnoreSingleProjectChanged, LoggingChanged;
 
 
 		[Category(Strings.OptionsCategory)]
@@ -96,6 +99,27 @@ namespace CustomTabNames
 				{
 					ignoreBuiltinProjects  = value;
 					IgnoreBuiltinProjectsChanged?.Invoke();
+				}
+			}
+		}
+
+		[Category(Strings.OptionsCategory)]
+		[DisplayName(Strings.OptionIgnoreSingleProject)]
+		[Description(Strings.OptionIgnoreSingleProjectDescription)]
+		[DefaultValue(Defaults.IgnoreSingleProject)]
+		public bool IgnoreSingleProject
+		{
+			get
+			{
+				return ignoreSingleProject;
+			}
+
+			set
+			{
+				if (ignoreSingleProject != value)
+				{
+					ignoreSingleProject = value;
+					IgnoreSingleProjectChanged?.Invoke();
 				}
 			}
 		}

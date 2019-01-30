@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -77,6 +78,16 @@ namespace CustomTabNames
 		public delegate void DocumentChangedHandler(DocumentWrapper d);
 		public event DocumentChangedHandler DocumentChanged;
 
+		// built-in projects that can be ignored
+		//
+		private static readonly List<string> BuiltinProjects = new List<string>()
+		{
+			EnvDTE.Constants.vsProjectKindMisc,
+			EnvDTE.Constants.vsProjectKindSolutionItems,
+			EnvDTE.Constants.vsProjectKindUnmodeled
+		};
+
+
 		public DocumentManager(DTE2 dte)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -111,9 +122,27 @@ namespace CustomTabNames
 				f(MakeDocumentWrapper(d));
 		}
 
+		public bool HasSingleProject()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			// todo
+			return false;
+		}
+
+		public bool IsInBuiltinProject(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var p = d?.ProjectItem?.ContainingProject;
+			if (p == null)
+				return false;
+
+			return BuiltinProjects.Contains(p.Kind);
+		}
+
 		// either registers or unregisters the events
 		//
-		void SetEvents(bool add)
+		private void SetEvents(bool add)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
