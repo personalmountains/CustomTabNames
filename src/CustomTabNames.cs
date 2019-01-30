@@ -104,12 +104,12 @@ namespace CustomTabNames
 		public void Start()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("starting");
+			Logger.Trace("starting");
 
 			if (started)
 			{
 				// shouldn't happen
-				Logger.Log("already started");
+				Logger.Error("already started");
 				return;
 			}
 
@@ -124,11 +124,11 @@ namespace CustomTabNames
 		public void Stop()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("stopping");
+			Logger.Trace("stopping");
 
 			if (!started)
 			{
-				Logger.Log("already stopped");
+				Logger.Error("already stopped");
 				return;
 			}
 
@@ -236,12 +236,12 @@ namespace CustomTabNames
 
 				// don't try again indefinitely
 				++tries;
-				Logger.Log("fixing all documents failed, try {0}", tries);
+				Logger.Warn("fixing all documents failed, try {0}", tries);
 
 				if (tries >= MaxTries)
 				{
 					// tried too many times
-					Logger.Log("exceeded {0} tries, bailing out", MaxTries);
+					Logger.Error("exceeded {0} tries, bailing out", MaxTries);
 					tries = 0;
 					return;
 				}
@@ -293,7 +293,7 @@ namespace CustomTabNames
 				{
 					// this shouldn't happen, Defer() is only called once all
 					// documents have been processed
-					Logger.Log("deferring, timer already started");
+					Logger.Warn("deferring, timer already started");
 					timer.Change(TryInterval, Timeout.Infinite);
 				}
 			}
@@ -324,8 +324,10 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var caption = Variables.Expand(d.Document, Options.Template);
-			return d.SetCaption(caption);
+			var c = Variables.Expand(d.Document, Options.Template);
+			Logger.Log("setting caption for {0} to {1}", d.Document.Name, c);
+
+			return d.SetCaption(c);
 		}
 	}
 }

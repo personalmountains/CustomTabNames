@@ -12,20 +12,12 @@ namespace CustomTabNames
 		// output window
 		private static IVsOutputWindowPane pane = null;
 
-		// logs the given string by calling String.Format()
-		//
-		public static void Log(string format, params object[] args)
+		private static Options Options
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			LogImpl(format, args);
-		}
-
-		// logs the given string by calling String.Format()
-		//
-		public static void Warn(string format, params object[] args)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			LogImpl(format, args);
+			get
+			{
+				return CustomTabNames.Instance.Options;
+			}
 		}
 
 		// logs the given string by calling String.Format()
@@ -33,17 +25,46 @@ namespace CustomTabNames
 		public static void Error(string format, params object[] args)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			LogImpl(format, args);
+			LogImpl(0, format, args);
 		}
 
-		private static void LogImpl(string format, params object[] args)
+		// logs the given string by calling String.Format()
+		//
+		public static void Warn(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(1, format, args);
+		}
+
+		// logs the given string by calling String.Format()
+		//
+		public static void Log(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(2, format, args);
+		}
+
+		// logs the given string by calling String.Format()
+		//
+		public static void Trace(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(3, format, args);
+		}
+
+		private static void LogImpl(
+			int level, string format, params object[] args)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			try
 			{
 				// don't do anything if logging is disabled
-				if (!CustomTabNames.Instance.Options.Logging)
+				if (!Options.Logging)
+					return;
+
+				// don't log if level is too high
+				if (level > Options.LoggingLevel)
 					return;
 
 				// make sure the pane exists
@@ -56,7 +77,8 @@ namespace CustomTabNames
 			{
 				pane.OutputString(
 					"failed to log string '" + format + "' " +
-					"with " + args.Length + " arguments, " + e.Message);
+					"with " + args.Length + " arguments, " +
+					e.Message + "\n");
 			}
 		}
 

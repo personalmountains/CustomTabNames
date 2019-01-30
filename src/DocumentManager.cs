@@ -89,8 +89,8 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			this.dte = dte;
+			this.docHandlers = new DocumentEventHandlers();
 
-			docHandlers = new DocumentEventHandlers();
 			docHandlers.DocumentOpened += OnDocumentChanged;
 			docHandlers.DocumentRenamed += OnDocumentChanged;
 		}
@@ -149,23 +149,23 @@ namespace CustomTabNames
 
 			if (rdt == null)
 			{
-				Logger.Log("can't get SVsRunningDocumentTable");
+				Logger.Error("can't get SVsRunningDocumentTable");
 				return;
 			}
 
 			if (add)
 			{
-				Logger.Log("adding events");
+				Logger.Trace("adding events");
 
 				rdt.AdviseRunningDocTableEvents(
 					docHandlers, out docHandlersCookie);
 			}
 			else
 			{
-				Logger.Log("removing events");
+				Logger.Trace("removing events");
 
 				if (docHandlersCookie == VSConstants.VSCOOKIE_NIL)
-					Logger.Log("docHandlersCookie is nil");
+					Logger.Error("docHandlersCookie is nil");
 				else
 					rdt.UnadviseRunningDocTableEvents(docHandlersCookie);
 			}
@@ -176,7 +176,7 @@ namespace CustomTabNames
 		private void OnDocumentChanged(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("document opened: {0}", d.Document.FullName);
+			Logger.Trace("document changed: {0}", d.Document.FullName);
 
 			DocumentChanged?.Invoke(d);
 		}

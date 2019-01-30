@@ -49,5 +49,10 @@
 		public const string OptionLogging = "Logging";
 		public const string OptionLoggingDescription =
 			"Whether logging to output window is enabled.";
+
+		public const string OptionLoggingLevel = "Logging level";
+		public const string OptionLoggingLevelDescription =
+			"When logging is enabled, determines the highest level to log.\n" +
+			"0=Error, 1=Warn, 2=Log, 3=Trace";
 	}
 }

@@ -21,6 +21,7 @@ namespace CustomTabNames
 			public const bool IgnoreBuiltinProjects = true;
 			public const bool IgnoreSingleProject = true;
 			public const bool Logging = false;
+			public const int LoggingLevel = 2;
 		}
 
 		private bool enabled = Defaults.Enabled;
@@ -28,6 +29,7 @@ namespace CustomTabNames
 		private bool ignoreBuiltinProjects = Defaults.IgnoreBuiltinProjects;
 		private bool ignoreSingleProject = Defaults.IgnoreSingleProject;
 		private bool logging = Defaults.Logging;
+		private int loggingLevel = Defaults.LoggingLevel;
 
 
 		public delegate void Handler();
@@ -36,6 +38,7 @@ namespace CustomTabNames
 		public event Handler EnabledChanged, TemplateChanged;
 		public event Handler IgnoreBuiltinProjectsChanged;
 		public event Handler IgnoreSingleProjectChanged, LoggingChanged;
+		public event Handler LoggingLevelChanged;
 
 
 		[Category(Strings.OptionsCategory)]
@@ -141,6 +144,32 @@ namespace CustomTabNames
 				{
 					logging = value;
 					LoggingChanged?.Invoke();
+				}
+			}
+		}
+
+		[Category(Strings.OptionsCategory)]
+		[DisplayName(Strings.OptionLoggingLevel)]
+		[Description(Strings.OptionLoggingLevelDescription)]
+		[DefaultValue(Defaults.LoggingLevel)]
+		public int LoggingLevel
+		{
+			get
+			{
+				return loggingLevel;
+			}
+
+			set
+			{
+				if (value < 0)
+					value = 0;
+				else if (value > 3)
+					value = 3;
+
+				if (loggingLevel != value)
+				{
+					loggingLevel = value;
+					LoggingLevelChanged?.Invoke();
 				}
 			}
 		}

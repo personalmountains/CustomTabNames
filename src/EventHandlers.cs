@@ -149,7 +149,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			Logger.Log("OnBeforeDocumentWindowShow {0}", d.Name);
+			Logger.Trace("OnBeforeDocumentWindowShow {0}", d.Name);
 			DocumentOpened?.Invoke(new DocumentWrapper(d, wf));
 
 			return VSConstants.S_OK;
@@ -170,8 +170,8 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			Logger.Log(
-				"OnAfterAttributeChangeEx renamed {0} to {1} ({3})",
+			Logger.Trace(
+				"OnAfterAttributeChangeEx renamed {0} to {1} ({2})",
 				oldPath, newPath, atts);
 
 			VsShellUtilities.IsDocumentOpen(
