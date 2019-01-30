@@ -11,22 +11,22 @@ Variables can also contain a single-quoted string: `$(VariableName 'string')`. T
 These variables can be used in the template:
 
 #### `ProjectName`
-Name of the project that owns the document.
+Name of the project that owns the document. Can be empty if the option to ignore single projects is enabled.
 
 #### `ParentDir`
-Name of the parent directory of the document. Can be empty.
+Name of the parent directory of the document, includes a terminating `/` if not empty.
 
 #### `Filename`
 Filename of the document.
 
 #### `FullPath`
-Full, absolute path of the document.
+Full path of the document.
 
 #### `FilterPath`
-All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Can be empty.
+All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Ends with a `/` if not empty. Can be empty if the file is directly a child of a project.
 
 #### `ParentFilter`
-Parent filter of the document. Can be empty.
+Parent filter of the document. Ends with a `/` if not empty. Can be empty if the file is directly a child of a project.
 
 ## Options
 Options are under the item 'CustomTabNames' in the Options dialog.
@@ -39,11 +39,17 @@ If false, all tabs are restored to showing the filename. Defaults to `true`.
 #### Ignore builtin projects
 Some items are under dummy projects. For example, opening a file that's not in the solution puts it under a project named "Miscellaneous files", which would appear with `$(ProjectName)`. When `true`, these dummy projects are ignored and `$(ProjectName)` will expand to an empty string. Defaults to `true`.
 
+#### Ignore single project
+Doesn't expand $(ProjectName) if there's only one project in the solution. Defaults to `true`.
+
 #### Logging
 If true, a new entry 'CustomTabNames' is created in the Output window with logs from this extension. Defaults to `false`.
 
+#### LoggingLevel
+Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace. Ignored if `Logging` is `false. Defaults to 2 (Log).
+
 #### Template
-The template string used to generate captions. Defaults to `$(ProjectName ':')$(ParentDir)$(Filename)`.
+The template string used to generate captions. Defaults to `$(ProjectName ':')$(FilterPath)$(Filename)`.
 
 ## Building
 Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `bin/Release/CustomTabNames.vsix`, select the appropriate Visual Studio versions, and install. Tested on 2017 and 2019.
