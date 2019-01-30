@@ -63,8 +63,6 @@ namespace CustomTabNames
 	//
 	public sealed class DocumentManager
 	{
-		private readonly DTE2 dte;
-
 		private readonly DocumentEventHandlers docHandlers;
 		private readonly SolutionEventHandlers solHandlers;
 
@@ -91,11 +89,10 @@ namespace CustomTabNames
 		};
 
 
-		public DocumentManager(DTE2 dte)
+		public DocumentManager()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			this.dte = dte;
 			this.docHandlers = new DocumentEventHandlers();
 			this.solHandlers = new SolutionEventHandlers();
 
@@ -139,7 +136,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			VsShellUtilities.IsDocumentOpen(
-				CustomTabNames.Instance.ServiceProvider,
+				CustomTabNames.Instance,
 				path, VSConstants.LOGVIEWID.Primary_guid,
 				out _, out _, out var f);
 

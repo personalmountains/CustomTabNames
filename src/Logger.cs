@@ -9,8 +9,8 @@ namespace CustomTabNames
 	//
 	class Logger
 	{
-		// output window
-		private static IVsOutputWindowPane pane = null;
+		// output pane
+		static IVsOutputWindowPane pane = null;
 
 		private static Options Options
 		{
@@ -94,7 +94,7 @@ namespace CustomTabNames
 				return true;
 
 			// try getting the output window
-			var w = GetOutputWindow();
+			var w = CustomTabNames.Instance.OutputWindow;
 			if (w == null)
 				return false;
 
@@ -111,24 +111,6 @@ namespace CustomTabNames
 				return false;
 
 			return true;
-		}
-
-		// returns the Output window
-		//
-		private static IVsOutputWindow GetOutputWindow()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			CustomTabNames.Instance.ServiceProvider.QueryService(
-				typeof(SVsOutputWindow), out var w);
-
-			if (w != null)
-			{
-				if (w is IVsOutputWindow)
-					return (IVsOutputWindow)w;
-			}
-
-			return null;
 		}
 	}
 }

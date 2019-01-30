@@ -57,15 +57,13 @@ namespace CustomTabNames
 	[ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideOptionPage(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, true)]
-	[ProvideProfileAttribute(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, isToolsOptionPage: true)]
+	[ProvideProfile(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, isToolsOptionPage: true)]
 	[Guid(Strings.ExtensionGuid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
 		// this instance
 		public static CustomTabNames Instance { get; private set; }
 
-		public DTE2 DTE { get; private set; }
-		public ServiceProvider ServiceProvider { get; private set; }
 		public DocumentManager DocumentManager { get; private set; }
 
 		// options
@@ -75,9 +73,10 @@ namespace CustomTabNames
 		private bool started = false;
 
 		// services
-		IVsSolution solutionService = null;
-		IVsRunningDocumentTable rdtService = null;
-		IVsRunningDocumentTable4 rdtService4 = null;
+		IVsSolution solution = null;
+		IVsRunningDocumentTable rdt = null;
+		IVsRunningDocumentTable4 rdt4 = null;
+		IVsOutputWindow outputWindow = null;
 
 		private readonly MainThreadTimer timer = new MainThreadTimer();
 		private int failures = 0;
@@ -92,12 +91,7 @@ namespace CustomTabNames
 		protected override async Task InitializeAsync(
 			CancellationToken ct, IProgress<ServiceProgressData> p)
 		{
-			await this.JoinableTaskFactory.SwitchToMainThreadAsync(ct);
-
-			this.DTE = Package.GetGlobalService(typeof(DTE)) as DTE2;
-
-			this.ServiceProvider = new ServiceProvider(
-				(OLE.Interop.IServiceProvider)this.DTE);
+			await JoinableTaskFactory.SwitchToMainThreadAsync(ct);
 
 			if (Solution == null || RDT == null)
 			{
@@ -106,10 +100,10 @@ namespace CustomTabNames
 			}
 
 			Options = (Options)GetDialogPage(typeof(Options));
-			this.DocumentManager = new DocumentManager(this.DTE);
+			DocumentManager = new DocumentManager();
 
-			this.DocumentManager.DocumentChanged += OnDocumentChanged;
-			this.DocumentManager.ProjectsChanged += OnProjectsChanged;
+			DocumentManager.DocumentChanged += OnDocumentChanged;
+			DocumentManager.ProjectsChanged += OnProjectsChanged;
 
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplateChanged += OnTemplateChanged;
@@ -172,16 +166,14 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				if (solutionService == null)
+				if (solution == null)
 				{
-					solutionService = CustomTabNames.Instance.ServiceProvider
-						.GetService(typeof(SVsSolution)) as IVsSolution;
-
-					if (solutionService == null)
+					solution = GetService(typeof(SVsSolution)) as IVsSolution;
+					if (solution == null)
 						Logger.Error("failed to get IVsSolution");
 				}
 
-				return solutionService;
+				return solution;
 			}
 		}
 
@@ -191,17 +183,16 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				if (rdtService == null)
+				if (rdt == null)
 				{
-					rdtService = CustomTabNames.Instance.ServiceProvider
-						.GetService(typeof(SVsRunningDocumentTable))
-							as IVsRunningDocumentTable;
+					rdt = GetService(typeof(SVsRunningDocumentTable))
+						as IVsRunningDocumentTable;
 
-					if (rdtService == null)
+					if (rdt == null)
 						Logger.Error("can't get IVsRunningDocumentTable");
 				}
 
-				return rdtService;
+				return rdt;
 			}
 		}
 
@@ -211,17 +202,35 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				if (rdtService4 == null)
+				if (rdt4 == null)
 				{
-					rdtService4 = CustomTabNames.Instance.ServiceProvider
-						.GetService(typeof(SVsRunningDocumentTable))
-							as IVsRunningDocumentTable4;
+					rdt4 = GetService(typeof(SVsRunningDocumentTable))
+						as IVsRunningDocumentTable4;
 
-					if (rdtService4 == null)
+					if (rdt4 == null)
 						Logger.Error("can't get IVsRunningDocumentTable4");
 				}
 
-				return rdtService4;
+				return rdt4;
+			}
+		}
+
+		public IVsOutputWindow OutputWindow
+		{
+			get
+			{
+				ThreadHelper.ThrowIfNotOnUIThread();
+
+				if (outputWindow == null)
+				{
+					outputWindow = GetService(typeof(SVsOutputWindow))
+						as IVsOutputWindow;
+
+					if (outputWindow == null)
+						Logger.Error("can't get IVsOutputWindow");
+				}
+
+				return outputWindow;
 			}
 		}
 
