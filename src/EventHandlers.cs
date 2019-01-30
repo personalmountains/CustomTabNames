@@ -174,11 +174,7 @@ namespace CustomTabNames
 				"OnAfterAttributeChangeEx renamed {0} to {1} ({2})",
 				oldPath, newPath, atts);
 
-			VsShellUtilities.IsDocumentOpen(
-				CustomTabNames.Instance.ServiceProvider,
-				newPath, VSConstants.LOGVIEWID.Primary_guid,
-				out _, out _, out var f);
-
+			var f = DocumentManager.WindowFrameFromPath(newPath);
 			if (f == null)
 			{
 				Logger.Error("OnAfterAttributeChangeEx can't get frame");

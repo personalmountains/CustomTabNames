@@ -25,6 +25,32 @@ using OLE = Microsoft.VisualStudio.OLE;
 
 namespace CustomTabNames
 {
+	sealed class MainThreadTimer
+	{
+		private Timer t = null;
+
+		public void Start(int ms, Action a)
+		{
+			if (t == null)
+				t = new Timer(OnTimer, a, ms, Timeout.Infinite);
+			else
+				t.Change(ms, Timeout.Infinite);
+		}
+
+		private void OnTimer(object a)
+		{
+			_ = OnMainThreadAsync((Action)a);
+		}
+
+		private async Task OnMainThreadAsync(Action a)
+		{
+			await CustomTabNames.Instance
+				.JoinableTaskFactory.SwitchToMainThreadAsync();
+
+			a();
+		}
+	}
+
 	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 	[InstalledProductRegistration(Strings.ExtensionName, Strings.ExtensionDescription, Strings.ExtensionVersion)]
 	[ProvideService(typeof(CustomTabNames), IsAsyncQueryable = true)]
@@ -35,20 +61,6 @@ namespace CustomTabNames
 	[Guid(Strings.ExtensionGuid)]
 	public sealed class CustomTabNames : AsyncPackage
 	{
-		// number of times the defer timer was fired, see Defer()
-		private int tries = 0;
-		private const int MaxTries = 5;
-		private const int TryInterval = 2000;
-
-		// started by Defer() when at least when document didn't have a frame,
-		// see Defer()
-		private Timer timer = null;
-		private readonly object timerLock = new object();
-
-		// whether Start() has already been called
-		private bool started = false;
-
-
 		// this instance
 		public static CustomTabNames Instance { get; private set; }
 
@@ -59,6 +71,13 @@ namespace CustomTabNames
 		// options
 		public Options Options { get; private set; }
 
+		// whether Start() has already been called
+		private bool started = false;
+
+		private readonly MainThreadTimer timer = new MainThreadTimer();
+		private int failures = 0;
+		private const int FailureDelay = 2000;
+		private const int MaxFailures = 5;
 
 		public CustomTabNames()
 		{
@@ -197,64 +216,49 @@ namespace CustomTabNames
 		private void OnDocumentChanged(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			if (!FixCaption(d))
-				Defer();
-		}
-
-		// called from OnTimer() below because it's not on the main thread
-		//
-		private async Task FixAllDocumentsAsync()
-		{
-			await JoinableTaskFactory.SwitchToMainThreadAsync();
-			FixAllDocuments();
+			FixCaption(d);
 		}
 
 		// walks through all opened documents and tries to set the caption for
 		// each of them
-		//
-		// this may fail for certain documents if they're open but don't have a
-		// frame yet, which seemingly happens when loading a project; in that
-		// case, Defer() is called, which starts a timer to try again later
 		//
 		private void FixAllDocuments()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("fixing all documents");
 
-			bool failed = false;
-
-			DocumentManager.ForEachDocument((d) =>
+			try
 			{
-				if (!FixCaption(d))
-					failed = true;
-			});
-
-			if (failed)
-			{
-				// at least one document failed
-
-				// don't try again indefinitely
-				++tries;
-				Logger.Warn("fixing all documents failed, try {0}", tries);
-
-				if (tries >= MaxTries)
+				DocumentManager.ForEachDocument((d) =>
 				{
-					// tried too many times
-					Logger.Error("exceeded {0} tries, bailing out", MaxTries);
-					tries = 0;
-					return;
-				}
-
-				// try again later
-				Defer();
+					FixCaption(d);
+				});
 			}
-			else
+			catch (COMException e)
 			{
-				// succeeded, reset the tries for next time, although this
-				// doesn't seem to happen again once all the documents have
-				// been loaded
-				tries = 0;
+				// not sure why this happens, but dte.Documents will sometimes
+				// throw a COMException with E_FAIL
+				//
+				// this starts a timer and tries again after a few seconds, but
+				// only MaxFailures times
+				//
+				// if it's still broken after that, tabs that are already
+				// opened won't be processed, unless they get handled by the
+				// RDT events
+
+				++failures;
+
+				Logger.Error("ForEachDocument failed, " + e.Message);
+
+				if (failures < MaxFailures)
+				{
+					Logger.Error("trying again in {0} ms", FailureDelay);
+					timer.Start(FailureDelay, FixAllDocuments);
+				}
+				else
+				{
+					Logger.Error("bailing out");
+				}
 			}
 		}
 
@@ -273,46 +277,6 @@ namespace CustomTabNames
 			});
 		}
 
-		// called by FixAllDocuments() when at least one document failed; starts
-		// or updates a timer so they can be tried again
-		//
-		private void Defer()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			lock (timerLock)
-			{
-				if (timer == null)
-				{
-					Logger.Log("deferring");
-
-					timer = new Timer(
-						OnTimer, null, TryInterval, Timeout.Infinite);
-				}
-				else
-				{
-					// this shouldn't happen, Defer() is only called once all
-					// documents have been processed
-					Logger.Warn("deferring, timer already started");
-					timer.Change(TryInterval, Timeout.Infinite);
-				}
-			}
-		}
-
-		// fired by the timer set in Defer(), tries to fix all documents again
-		//
-		private void OnTimer(object o)
-		{
-			// careful: not on main thread
-
-			lock (timerLock)
-			{
-				timer = null;
-			}
-
-			_ = FixAllDocumentsAsync();
-		}
-
 		// called on each document by FixAllDocuments() and on documents given
 		// by the DocumentChanged event from the DocumentManager
 		//
@@ -320,14 +284,14 @@ namespace CustomTabNames
 		//
 		// may fail if the document doesn't have a frame yet
 		//
-		private bool FixCaption(DocumentWrapper d)
+		private void FixCaption(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			var c = Variables.Expand(d.Document, Options.Template);
-			Logger.Log("setting caption for {0} to {1}", d.Document.Name, c);
+			Logger.Log("caption for {0} is {1}", d.Document.FullName, c);
 
-			return d.SetCaption(c);
+			d.SetCaption(c);
 		}
 	}
 }

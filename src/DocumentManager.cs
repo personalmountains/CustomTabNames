@@ -29,21 +29,15 @@ namespace CustomTabNames
 
 		// sets the caption of this document to the given string
 		//
-		public bool SetCaption(string s)
+		public void SetCaption(string s)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			// fail without frame
-			if (Frame == null)
-				return false;
 
 			// the visible caption is made of a combination of the EditorCaption
 			// and OwnerCaption; setting the EditorCaption to null makes sure
 			// the caption can be controlled uniquely by OwnerCaption
 			Frame.SetProperty((int)VsFramePropID.EditorCaption, null);
 			Frame.SetProperty((int)VsFramePropID.OwnerCaption, s);
-
-			return true;
 		}
 
 		// resets the caption of this document to the default value
@@ -110,14 +104,65 @@ namespace CustomTabNames
 			SetEvents(false);
 		}
 
+		// returns an IVsWindowFrame associated with the given path
+		//
+		// there doesn't seem to be any good way of getting a IVsWindowFrame
+		// from a Document except for IsDocumentOpen()
+		//
+		// it checks if a document is open by matching full paths, which
+		// isn't great, but seems to be enough; a side-effect is that it
+		// also provides the associated IVsWindowFrame if the document is
+		// opened
+		//
+		// note that a document might be open, but without a frame, which
+		// seems to happen mostly while a project is being loaded, so this
+		// may return null
+		//
+		public static IVsWindowFrame WindowFrameFromPath(string path)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			VsShellUtilities.IsDocumentOpen(
+				CustomTabNames.Instance.ServiceProvider,
+				path, VSConstants.LOGVIEWID.Primary_guid,
+				out _, out _, out var f);
+
+			return f;
+		}
+
+		// returns an IVsWindowFrame associated with the given Document; see
+		// WindowFrameFromPath()
+		//
+		public static IVsWindowFrame WindowFrameFromDocument(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			return WindowFrameFromPath(d.FullName);
+		}
+
 		// calls f() for each opened document
 		//
 		public void ForEachDocument(Action<DocumentWrapper> f)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			foreach (Document d in dte.Documents)
-				f(MakeDocumentWrapper(d));
+			foreach (var o in dte.Documents)
+			{
+				var d = o as Document;
+				if (d == null)
+					continue;
+
+				var wf = WindowFrameFromDocument(d);
+				if (wf == null)
+				{
+					// this seems to happen for documents that haven't loaded
+					// yet, they should get picked up by
+					// DocumentEventHandlers.OnBeforeDocumentWindowShow later
+					Logger.Log("skipping {0}, no frame", d.FullName);
+					continue;
+				}
+
+				f(new DocumentWrapper(d, wf));
+			}
 		}
 
 		public bool HasSingleProject()
@@ -179,35 +224,6 @@ namespace CustomTabNames
 			Logger.Trace("document changed: {0}", d.Document.FullName);
 
 			DocumentChanged?.Invoke(d);
-		}
-
-		private DocumentWrapper MakeDocumentWrapper(Document d)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			// this is messy
-			//
-			// the events above either give a Document or a Window, but neither
-			// can be used to change the caption, this can only be done on a
-			// IVsWindowFrame
-			//
-			// there doesn't seem to be any good way of getting a IVsWindowFrame
-			// from a Document except for IsDocumentOpen()
-			//
-			// it checks if a document is open by matching full paths, which
-			// isn't great, but seems to be enough; a side-effect is that it
-			// also provides the associated IVsWindowFrame if the document is
-			// opened
-			//
-			// note that a document might be open, but without a frame, which
-			// seems to happen mostly while a project is being loaded
-
-			VsShellUtilities.IsDocumentOpen(
-				CustomTabNames.Instance.ServiceProvider,
-				d.FullName, VSConstants.LOGVIEWID.Primary_guid,
-				out _, out _, out var f);
-
-			return new DocumentWrapper(d, f);
 		}
 	}
 }
