@@ -143,6 +143,11 @@ namespace CustomTabNames
 			while (true)
 			{
 				e = enumerator.Next(1, cookie, out var fetched);
+
+				// done
+				if (e == VSConstants.S_FALSE || fetched != 1)
+					break;
+
 				if (e != VSConstants.S_OK)
 				{
 					Logger.ErrorCode(
@@ -150,9 +155,6 @@ namespace CustomTabNames
 
 					break;
 				}
-
-				if (fetched != 1)
-					break;
 
 				if (cookie[0] == VSConstants.VSCOOKIE_NIL)
 					continue;
@@ -199,6 +201,11 @@ namespace CustomTabNames
 			while (true)
 			{
 				e = enumerator.Next(1, hierarchy, out var fetched);
+
+				// done
+				if (e == VSConstants.S_FALSE || fetched != 1)
+					break;
+
 				if (e != VSConstants.S_OK)
 				{
 					Logger.ErrorCode(
@@ -206,9 +213,6 @@ namespace CustomTabNames
 
 					break;
 				}
-
-				if (fetched != 1)
-					break;
 
 				f(hierarchy[0]);
 			}
