@@ -188,10 +188,42 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
-				return "";
+			var s = string.Join("/", FilterPathParts(d));
+
+			// ending slash
+			if (s.Length > 0)
+				s += "/";
+
+			return s;
+		}
+
+		// returns the name of the document's parent filter, or an empty string
+		//
+		public static string ParentFilter(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var s = "";
+
+			var parts = FilterPathParts(d);
+			if (parts.Count > 0)
+				s = parts[parts.Count - 1];
+
+			if (s.Length > 0)
+				s += "/";
+
+			return s;
+		}
+
+
+		private static List<string> FilterPathParts(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
 
 			var parts = new List<string>();
+
+			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
+				return parts;
 
 			while (id != (uint)VSConstants.VSITEMID.Nil)
 			{
@@ -239,28 +271,8 @@ namespace CustomTabNames
 					parts.RemoveAt(0);
 			}
 
-
-			var s = string.Join("/", parts);
-
-			// ending slash
-			if (s.Length > 0)
-				s += "/";
-
-			return s;
+			return parts;
 		}
-
-		// returns the name of the document's parent filter, or an empty string
-		//
-		public static string ParentFilter(Document d)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			if (d?.ProjectItem?.Collection?.Parent is ProjectItem pi)
-				return pi.Name;
-
-			return "";
-		}
-
 
 		// splits the given path on slash and backslash
 		//

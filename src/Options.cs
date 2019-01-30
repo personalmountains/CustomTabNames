@@ -17,7 +17,7 @@ namespace CustomTabNames
 		{
 			public const bool Enabled = true;
 			public const string Template =
-				"$(ProjectName ':')$(ParentDir)$(Filename)";
+				"$(ProjectName ':')$(FilterPath)$(Filename)";
 			public const bool IgnoreBuiltinProjects = true;
 			public const bool IgnoreSingleProject = true;
 			public const bool Logging = false;
