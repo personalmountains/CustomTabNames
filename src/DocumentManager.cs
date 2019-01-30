@@ -4,7 +4,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
 using EnvDTE;
-using EnvDTE80;
 
 namespace CustomTabNames
 {
@@ -61,7 +60,7 @@ namespace CustomTabNames
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
-	public sealed class DocumentManager
+	public sealed class DocumentManager : IDisposable
 	{
 		private readonly DocumentEventHandlers docHandlers;
 		private readonly SolutionEventHandlers solHandlers;
@@ -100,6 +99,11 @@ namespace CustomTabNames
 			docHandlers.DocumentRenamed += OnDocumentChanged;
 			solHandlers.ProjectCountChanged += OnProjectCountChanged;
 			solHandlers.DocumentMoved += OnDocumentChanged;
+		}
+
+		public void Dispose()
+		{
+			projectCountTimer.Dispose();
 		}
 
 		// starts the manager
@@ -182,18 +186,15 @@ namespace CustomTabNames
 				return null;
 			}
 
-			var pi = o as ProjectItem;
-			if (pi == null)
-			{
-				// not all items are project items, this happens particularly
-				// with ForEachDocument, because GetRunningDocumentsEnum()
-				// seems to return projects as well as documents
-				//
-				// therefore, don't warn, just ignore
-				return null;
-			}
+			if (o is ProjectItem pi)
+				return pi.Document;
 
-			return pi.Document;
+			// not all items are project items, this happens particularly
+			// with ForEachDocument, because GetRunningDocumentsEnum()
+			// seems to return projects as well as documents
+			//
+			// therefore, don't warn, just ignore
+			return null;
 		}
 
 		// returns a Document from the given cookie
@@ -302,7 +303,7 @@ namespace CustomTabNames
 			}
 		}
 
-		public bool HasSingleProject()
+		public static bool HasSingleProject()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -321,7 +322,7 @@ namespace CustomTabNames
 			}
 		}
 
-		public bool IsInBuiltinProject(Document d)
+		public static bool IsInBuiltinProject(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 

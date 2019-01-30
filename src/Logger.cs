@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell;
 using System;
+using System.Globalization;
 
 namespace CustomTabNames
 {
@@ -71,7 +72,8 @@ namespace CustomTabNames
 				if (!CheckPane())
 					return;
 
-				pane.OutputString(String.Format(format, args) + "\n");
+				pane.OutputString(String.Format(
+					CultureInfo.InvariantCulture, format, args) + "\n");
 			}
 			catch (System.FormatException e)
 			{

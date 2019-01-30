@@ -7,13 +7,13 @@ using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
 {
-	using VariablesDictionary = Dictionary<string, Func<Document, string>>;
+	using Dict = Dictionary<string, Func<Document, string>>;
 
 	public sealed class Variables
 	{
 		// maps variable names to functions
 		//
-		public static VariablesDictionary Dictionary = new VariablesDictionary()
+		private static readonly Dict Dictionary = new Dict()
 		{
 			// variable names must be [a-zA-Z]
 			{"ProjectName",    ProjectName},
@@ -31,14 +31,6 @@ namespace CustomTabNames
 			get
 			{
 				return CustomTabNames.Instance.Options;
-			}
-		}
-
-		private static DocumentManager DocumentManager
-		{
-			get
-			{
-				return CustomTabNames.Instance.DocumentManager;
 			}
 		}
 
@@ -92,7 +84,7 @@ namespace CustomTabNames
 				string s = v(d);
 
 				// don't append the text if the result was empty
-				if (s != "")
+				if (s.Length == 0)
 					s += text;
 
 				Logger.Trace("  . variable {0} replaced by '{1}'", name, s);
@@ -224,11 +216,10 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var p = d?.ProjectItem?.Collection?.Parent as ProjectItem;
-			if (p == null)
-				return "";
+			if (d?.ProjectItem?.Collection?.Parent is ProjectItem pi)
+				return pi.Name;
 
-			return p.Name;
+			return "";
 		}
 
 

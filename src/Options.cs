@@ -75,7 +75,7 @@ namespace CustomTabNames
 
 			set
 			{
-				var v = (value == "" ? Defaults.Template : value);
+				var v = (value.Length == 0 ? Defaults.Template : value);
 
 				if (template != v)
 				{

@@ -9,7 +9,7 @@
 	//
 	// anyways, they're all here, might help with localization one day
 	//
-	public class Strings
+	public static class Strings
 	{
 		// update .vsixmanifest if this changes
 		public const string ExtensionGuid = "bee6c21e-fbf8-49b1-a0f8-89d7dfa732ee";

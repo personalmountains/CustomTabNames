@@ -3,10 +3,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE;
-using EnvDTE80;
 using Task = System.Threading.Tasks.Task;
-using OLE = Microsoft.VisualStudio.OLE;
 
 // the CustomTabNames class is the package; it starts the DocumentManager,
 // waits for events and calls FixCaption() on documents
@@ -25,9 +22,14 @@ using OLE = Microsoft.VisualStudio.OLE;
 
 namespace CustomTabNames
 {
-	public sealed class MainThreadTimer
+	public sealed class MainThreadTimer : IDisposable
 	{
 		private Timer t = null;
+
+		public void Dispose()
+		{
+			t?.Dispose();
+		}
 
 		public void Start(int ms, Action a)
 		{
@@ -59,7 +61,7 @@ namespace CustomTabNames
 	[ProvideOptionPage(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, true)]
 	[ProvideProfile(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, isToolsOptionPage: true)]
 	[Guid(Strings.ExtensionGuid)]
-	public sealed class CustomTabNames : AsyncPackage
+	public sealed class CustomTabNames : AsyncPackage, IDisposable
 	{
 		// this instance
 		public static CustomTabNames Instance { get; private set; }
@@ -86,6 +88,12 @@ namespace CustomTabNames
 		public CustomTabNames()
 		{
 			Instance = this;
+		}
+
+		public void Dispose()
+		{
+			timer.Dispose();
+			DocumentManager?.Dispose();
 		}
 
 		protected override async Task InitializeAsync(
