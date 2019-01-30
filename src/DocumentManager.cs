@@ -140,7 +140,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			VsShellUtilities.IsDocumentOpen(
-				CustomTabNames.Instance,
+				Package.Instance,
 				path, VSConstants.LOGVIEWID.Primary_guid,
 				out _, out _, out var f);
 
@@ -203,7 +203,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var mk = CustomTabNames.Instance.RDT4.GetDocumentMoniker(cookie);
+			var mk = Package.Instance.RDT4.GetDocumentMoniker(cookie);
 
 			if (mk == null)
 			{
@@ -227,7 +227,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var e = CustomTabNames.Instance.RDT.GetRunningDocumentsEnum(
+			var e = Package.Instance.RDT.GetRunningDocumentsEnum(
 				out var enumerator);
 
 			if (e != VSConstants.S_OK)
@@ -277,7 +277,7 @@ namespace CustomTabNames
 
 			Guid guid = Guid.Empty;
 
-			var e = CustomTabNames.Instance.Solution.GetProjectEnum(
+			var e = Package.Instance.Solution.GetProjectEnum(
 				(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
 				ref guid, out var enumerator);
 
@@ -309,7 +309,7 @@ namespace CustomTabNames
 
 			try
 			{
-				CustomTabNames.Instance.Solution.GetProperty(
+				Package.Instance.Solution.GetProperty(
 					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
 
 				int i = (int)o;

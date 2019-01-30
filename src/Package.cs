@@ -46,7 +46,7 @@ namespace CustomTabNames
 
 		private async Task OnMainThreadAsync(Action a)
 		{
-			await CustomTabNames.Instance
+			await Package.Instance
 				.JoinableTaskFactory.SwitchToMainThreadAsync();
 
 			a();
@@ -55,16 +55,16 @@ namespace CustomTabNames
 
 	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 	[InstalledProductRegistration(Strings.ExtensionName, Strings.ExtensionDescription, Strings.ExtensionVersion)]
-	[ProvideService(typeof(CustomTabNames), IsAsyncQueryable = true)]
+	[ProvideService(typeof(Package), IsAsyncQueryable = true)]
 	[ProvideAutoLoad(UIContextGuids80.NoSolution, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
 	[ProvideOptionPage(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, true)]
 	[ProvideProfile(typeof(Options), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, isToolsOptionPage: true)]
 	[Guid(Strings.ExtensionGuid)]
-	public sealed class CustomTabNames : AsyncPackage, IDisposable
+	public sealed class Package : AsyncPackage, IDisposable
 	{
 		// this instance
-		public static CustomTabNames Instance { get; private set; }
+		public static Package Instance { get; private set; }
 
 		public DocumentManager DocumentManager { get; private set; }
 
@@ -85,7 +85,7 @@ namespace CustomTabNames
 		private const int FailureDelay = 2000;
 		private const int MaxFailures = 5;
 
-		public CustomTabNames()
+		public Package()
 		{
 			Instance = this;
 		}

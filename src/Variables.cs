@@ -30,7 +30,7 @@ namespace CustomTabNames
 		{
 			get
 			{
-				return CustomTabNames.Instance.Options;
+				return Package.Instance.Options;
 			}
 		}
 

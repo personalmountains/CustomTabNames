@@ -127,8 +127,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Trace("registering for solution events");
 
-			CustomTabNames.Instance.Solution
-				.AdviseSolutionEvents(this, out cookie);
+			Package.Instance.Solution.AdviseSolutionEvents(this, out cookie);
 
 			DocumentManager.ForEachProjectHierarchy((h) =>
 			{
@@ -150,7 +149,7 @@ namespace CustomTabNames
 			if (cookie == VSConstants.VSCOOKIE_NIL)
 				Logger.Error("cookie is nil");
 			else
-				CustomTabNames.Instance.Solution.UnadviseSolutionEvents(cookie);
+				Package.Instance.Solution.UnadviseSolutionEvents(cookie);
 		}
 
 
@@ -347,9 +346,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			Logger.Trace("registering for document events");
-
-			CustomTabNames.Instance.RDT
-				.AdviseRunningDocTableEvents(this, out cookie);
+			Package.Instance.RDT.AdviseRunningDocTableEvents(this, out cookie);
 		}
 
 		public void Unregister()
@@ -364,7 +361,7 @@ namespace CustomTabNames
 				return;
 			}
 
-			CustomTabNames.Instance.RDT.UnadviseRunningDocTableEvents(cookie);
+			Package.Instance.RDT.UnadviseRunningDocTableEvents(cookie);
 		}
 
 

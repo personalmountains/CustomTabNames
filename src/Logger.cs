@@ -17,7 +17,7 @@ namespace CustomTabNames
 		{
 			get
 			{
-				return CustomTabNames.Instance.Options;
+				return Package.Instance.Options;
 			}
 		}
 
@@ -96,7 +96,7 @@ namespace CustomTabNames
 				return true;
 
 			// try getting the output window
-			var w = CustomTabNames.Instance.OutputWindow;
+			var w = Package.Instance.OutputWindow;
 			if (w == null)
 				return false;
 
