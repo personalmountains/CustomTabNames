@@ -60,14 +60,14 @@ namespace CustomTabNames
 			// therefore, adding a file might fire twice: once here, and once
 			// in the document events below
 
-			var d = DocumentManager.DocumentFromItemID(Hierarchy, itemidAdded);
+			var d = Utilities.DocumentFromItemID(Hierarchy, itemidAdded);
 			if (d == null)
 			{
 				// the item was moved, but the document probably isn't opened
 				return VSConstants.S_OK;
 			}
 
-			var wf = DocumentManager.WindowFrameFromDocument(d);
+			var wf = Utilities.WindowFrameFromDocument(d);
 			if (wf == null)
 			{
 				Logger.Error(
@@ -224,7 +224,7 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.Error("GetCanonicalName() on hierarchy failed, {0}", e);
+				Logger.ErrorCode(e, "GetCanonicalName() on hierarchy failed");
 				return;
 			}
 
@@ -255,7 +255,7 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.Error("GetCanonicalName() on hierarchy failed, {0}", e);
+				Logger.ErrorCode(e, "GetCanonicalName() on hierarchy failed");
 				return;
 			}
 
@@ -404,7 +404,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			var d = DocumentManager.DocumentFromWindowFrame(wf);
+			var d = Utilities.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{
 				Logger.Error(
@@ -439,7 +439,7 @@ namespace CustomTabNames
 				"OnAfterAttributeChangeEx renamed {0} to {1} ({2})",
 				oldPath, newPath, atts);
 
-			var f = DocumentManager.WindowFrameFromPath(newPath);
+			var f = Utilities.WindowFrameFromPath(newPath);
 			if (f == null)
 			{
 				// this seems to happen when renaming projects, not sure why

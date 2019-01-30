@@ -122,106 +122,6 @@ namespace CustomTabNames
 			SetEvents(false);
 		}
 
-		// returns an IVsWindowFrame associated with the given path
-		//
-		// there doesn't seem to be any good way of getting a IVsWindowFrame
-		// from a Document except for IsDocumentOpen()
-		//
-		// it checks if a document is open by matching full paths, which
-		// isn't great, but seems to be enough; a side-effect is that it
-		// also provides the associated IVsWindowFrame if the document is
-		// opened
-		//
-		// note that a document might be open, but without a frame, which
-		// seems to happen mostly while a project is being loaded, so this
-		// may return null
-		//
-		public static IVsWindowFrame WindowFrameFromPath(string path)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			VsShellUtilities.IsDocumentOpen(
-				Package.Instance,
-				path, VSConstants.LOGVIEWID.Primary_guid,
-				out _, out _, out var f);
-
-			return f;
-		}
-
-		// returns an IVsWindowFrame associated with the given Document; see
-		// WindowFrameFromPath()
-		//
-		public static IVsWindowFrame WindowFrameFromDocument(Document d)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			return WindowFrameFromPath(d.FullName);
-		}
-
-		// returns the Document associated with the given IVsWindowFrame
-		//
-		public static Document DocumentFromWindowFrame(IVsWindowFrame wf)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var w = VsShellUtilities.GetWindowObject(wf);
-			if (w == null)
-				return null;
-
-			return w.Document;
-		}
-
-		// returns a Document associated with an itemid in a hierarchy
-		//
-		public static Document DocumentFromItemID(IVsHierarchy h, uint itemid)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var e = h.GetProperty(
-				itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out var o);
-
-			if (e != VSConstants.S_OK || o == null)
-			{
-				Logger.Error(
-					"DocumentFromID: GetProperty for extObject failed, {0}", e);
-
-				return null;
-			}
-
-			if (o is ProjectItem pi)
-				return pi.Document;
-
-			// not all items are project items, this happens particularly
-			// with ForEachDocument, because GetRunningDocumentsEnum()
-			// seems to return projects as well as documents
-			//
-			// therefore, don't warn, just ignore
-			return null;
-		}
-
-		// returns a Document from the given cookie
-		//
-		public static Document DocumentFromCookie(uint cookie)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var mk = Package.Instance.RDT4.GetDocumentMoniker(cookie);
-
-			if (mk == null)
-			{
-				Logger.Error(
-					"GetDocumentMoniker failed for cookie {0} failed",
-					cookie);
-
-				return null;
-			}
-
-			var wf = WindowFrameFromPath(mk);
-			if (wf == null)
-				return null;
-
-			return DocumentFromWindowFrame(wf);
-		}
-
 		// calls f() for each opened document
 		//
 		public static void ForEachDocument(Action<DocumentWrapper> f)
@@ -233,7 +133,7 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.Error("GetRunningDocumentsEnum failed, {0}", e);
+				Logger.ErrorCode(e, "GetRunningDocumentsEnum failed");
 				return;
 			}
 
@@ -244,7 +144,12 @@ namespace CustomTabNames
 			{
 				e = enumerator.Next(1, cookie, out var fetched);
 				if (e != VSConstants.S_OK)
+				{
+					Logger.ErrorCode(
+						e, "ForEachDocument enumerator next failed");
+
 					break;
+				}
 
 				if (fetched != 1)
 					break;
@@ -252,11 +157,11 @@ namespace CustomTabNames
 				if (cookie[0] == VSConstants.VSCOOKIE_NIL)
 					continue;
 
-				var d = DocumentFromCookie(cookie[0]);
+				var d = Utilities.DocumentFromCookie(cookie[0]);
 				if (d == null)
 					continue;
 
-				var wf = WindowFrameFromDocument(d);
+				var wf = Utilities.WindowFrameFromDocument(d);
 				if (wf == null)
 				{
 					// this seems to happen for documents that haven't loaded
@@ -284,7 +189,7 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.Error("GetProjectEnum failed, {0}", e);
+				Logger.ErrorCode(e, "GetProjectEnum failed");
 				return;
 			}
 
@@ -295,7 +200,12 @@ namespace CustomTabNames
 			{
 				e = enumerator.Next(1, hierarchy, out var fetched);
 				if (e != VSConstants.S_OK)
+				{
+					Logger.ErrorCode(
+						e, "ForEachProjectHierarchy enumerator next failed");
+
 					break;
+				}
 
 				if (fetched != 1)
 					break;

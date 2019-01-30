@@ -52,6 +52,7 @@
     <Compile Include="src\Options.cs" />
     <Compile Include="src\Package.cs" />
     <Compile Include="src\Strings.cs" />
+    <Compile Include="src\Utilities.cs" />
     <Compile Include="src\Variables.cs" />
   </ItemGroup>
   <ItemGroup>

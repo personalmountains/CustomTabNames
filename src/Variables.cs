@@ -188,88 +188,29 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-
-			var cookie = Package.Instance.RDT4.GetDocumentCookie(d.FullName);
-			if (cookie == VSConstants.VSCOOKIE_NIL)
-			{
-				Logger.Error(
-					"FilterPath: GetDocumentCookie for {0} failed",
-					d.FullName);
-
+			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
 				return "";
-			}
-
-
-			Package.Instance.RDT4.GetDocumentHierarchyItem(
-				cookie, out var h, out var itemid);
-
-			if (h == null || itemid == (uint)VSConstants.VSITEMID.Nil)
-			{
-				Logger.Error(
-					"FilterPath: GetDocumentHierarchyItem for {0} failed",
-					d.FullName);
-
-				return "";
-			}
-
 
 			var parts = new List<string>();
 
-			while (itemid != (uint)VSConstants.VSITEMID.Nil)
+			while (id != (uint)VSConstants.VSITEMID.Nil)
 			{
-				var e = h.GetProperty(
-					itemid, (int)__VSHPROPID.VSHPROPID_Parent,
-					out var parentidObject);
-
-				if (e != VSConstants.S_OK || !(parentidObject is int))
-				{
-					Logger.Log(
-						"FilterPath: GetProperty parent for {0} failed, {1}",
-						d.FullName, e);
-
+				if (!Utilities.ParentItemID(h, id, out var pid))
 					break;
-				}
-
-				var parentid = (uint)(int)parentidObject;
 
 				// no more parent
-				if (parentid == (uint)VSConstants.VSITEMID.Nil)
+				if (pid == (uint)VSConstants.VSITEMID.Nil)
 					break;
 
-				e = h.GetGuidProperty(
-					parentid, (int)__VSHPROPID.VSHPROPID_TypeGuid,
-					out var type);
-
-				if (e != VSConstants.S_OK || type == null)
+				if (Utilities.ItemIsFolder(h, pid))
 				{
-					Logger.Error(
-						"FilterPath: GetProperty typeguid for {0} failed, {1}",
-						d.FullName, e);
+					var name = Utilities.ItemName(h, pid);
 
-					return "";
+					if (name != null)
+						parts.Insert(0, name);
 				}
 
-				// ignore anything but folders
-				if (type == VSConstants.ItemTypeGuid.PhysicalFolder_guid ||
-					type == VSConstants.ItemTypeGuid.VirtualFolder_guid)
-				{
-					e = h.GetProperty(
-						parentid, (int)__VSHPROPID.VSHPROPID_Name,
-						out var nameObject);
-
-					if (e != VSConstants.S_OK || !(nameObject is string))
-					{
-						Logger.Error(
-							"FilterPath: GetProperty name for {0} failed, {1}",
-							d.FullName, e);
-
-						return "";
-					}
-
-					parts.Insert(0, (string)nameObject);
-				}
-
-				itemid = parentid;
+				id = pid;
 			}
 
 
@@ -280,9 +221,9 @@ namespace CustomTabNames
 				// some of the builtin projects like miscellaneous items seem
 				// to behave both as projects and folders
 				//
-				// the check above for physical/virtual folders works fine for
-				// regular projects, where the root project item doesn't say
-				// it's a folder (cause it ain't)
+				// the ItemIsFolder() call above checks for physical/virtual
+				// folders and works fine for regular projects, where the root
+				// project item doesn't say it's a folder (cause it ain't)
 				//
 				// but when an external file is opened, it gets put in this
 				// magic miscellaneous items project, which _does_ report its
@@ -291,14 +232,15 @@ namespace CustomTabNames
 				//
 				// in any case, if the document is in a builtin project, the
 				// first component is removed, because there doesn't seem to be
-				// any other way to verify it
+				// any way to figure out whether that node is a project or an
+				// actual folder
 
 				if (parts.Count > 0)
 					parts.RemoveAt(0);
 			}
 
 
-			var s = String.Join("/", parts);
+			var s = string.Join("/", parts);
 
 			// ending slash
 			if (s.Length > 0)
