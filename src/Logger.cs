@@ -4,7 +4,8 @@ using System;
 
 namespace CustomTabNames
 {
-	// logs strings to the Output window, in a specific pane
+	// logs strings to the Output window, in a specific pane; levels are not
+	// implemented yet
 	//
 	class Logger
 	{
@@ -16,16 +17,47 @@ namespace CustomTabNames
 		public static void Log(string format, params object[] args)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(format, args);
+		}
 
-			// don't do anything if logging is disabled
-			if (!CustomTabNames.Instance.Options.Logging)
-				return;
+		// logs the given string by calling String.Format()
+		//
+		public static void Warn(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(format, args);
+		}
 
-			// make sure the pane exists
-			if (!CheckPane())
-				return;
+		// logs the given string by calling String.Format()
+		//
+		public static void Error(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(format, args);
+		}
 
-			pane.OutputString(String.Format(format, args) + "\n");
+		private static void LogImpl(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			try
+			{
+				// don't do anything if logging is disabled
+				if (!CustomTabNames.Instance.Options.Logging)
+					return;
+
+				// make sure the pane exists
+				if (!CheckPane())
+					return;
+
+				pane.OutputString(String.Format(format, args) + "\n");
+			}
+			catch (System.FormatException e)
+			{
+				pane.OutputString(
+					"failed to log string '" + format + "' " +
+					"with " + args.Length + " arguments, " + e.Message);
+			}
 		}
 
 		// creates the pane in the output window if necessary, returns whether

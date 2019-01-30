@@ -59,7 +59,6 @@ namespace CustomTabNames
 		}
 	}
 
-
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
@@ -67,11 +66,8 @@ namespace CustomTabNames
 	{
 		private readonly DTE2 dte;
 
-		// these two need to be referenced here so they don't get collected, in
-		// which case none of the events registered work
-		// see https://stackoverflow.com/a/3899794/4885801
-		private readonly DocumentEvents docEvents;
-		private readonly WindowEvents winEvents;
+		private readonly DocumentEventHandlers docHandlers;
+		private uint docHandlersCookie = VSConstants.VSCOOKIE_NIL;
 
 		// fired every time a document changes in a way that may require
 		// fixing the caption
@@ -93,8 +89,10 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			this.dte = dte;
-			this.docEvents = dte.Events.DocumentEvents;
-			this.winEvents = dte.Events.WindowEvents;
+
+			docHandlers = new DocumentEventHandlers();
+			docHandlers.DocumentOpened += OnDocumentChanged;
+			docHandlers.DocumentRenamed += OnDocumentChanged;
 		}
 
 		// starts the manager
@@ -146,74 +144,41 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			// todo: registering for all three events may not be necessary, as
-			// all of them happen every time a document is opened, but the
-			// frame might not be available in all of them
-			//
-			// in particular, DocumentOpened sometimes gives documents without
-			// frames
-			//
-			// so this will unfortunately change captions much more often than
-			// necessary
+			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
+				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+
+			if (rdt == null)
+			{
+				Logger.Log("can't get SVsRunningDocumentTable");
+				return;
+			}
 
 			if (add)
 			{
 				Logger.Log("adding events");
-				docEvents.DocumentOpened += OnDocumentOpened;
-				winEvents.WindowCreated += OnWindowCreated;
-				winEvents.WindowActivated += OnWindowActivated;
+
+				rdt.AdviseRunningDocTableEvents(
+					docHandlers, out docHandlersCookie);
 			}
 			else
 			{
 				Logger.Log("removing events");
-				docEvents.DocumentOpened -= OnDocumentOpened;
-				winEvents.WindowCreated -= OnWindowCreated;
-				winEvents.WindowActivated -= OnWindowActivated;
+
+				if (docHandlersCookie == VSConstants.VSCOOKIE_NIL)
+					Logger.Log("docHandlersCookie is nil");
+				else
+					rdt.UnadviseRunningDocTableEvents(docHandlersCookie);
 			}
 		}
 
-		// fired when a document has been opened
+		// fired when a document has been opened or renamed
 		//
-		private void OnDocumentOpened(Document d)
+		private void OnDocumentChanged(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("document opened: {0}", d.FullName);
+			Logger.Log("document opened: {0}", d.Document.FullName);
 
-			DocumentChanged?.Invoke(MakeDocumentWrapper(d));
-		}
-
-		// fired when a window has been created
-		//
-		private void OnWindowCreated(Window w)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("window created: {0}", w.Caption);
-
-			if (w.Document == null)
-			{
-				// this happens for windows like the solution explorer
-				Logger.Log("not a document");
-				return;
-			}
-
-			DocumentChanged?.Invoke(MakeDocumentWrapper(w.Document));
-		}
-
-		// fired when a window has been activated
-		//
-		private void OnWindowActivated(Window w, Window lost)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Log("window activated: {0}", w.Caption);
-
-			if (w.Document == null)
-			{
-				// this happens for windows like the solution explorer
-				Logger.Log("not a document");
-				return;
-			}
-
-			DocumentChanged?.Invoke(MakeDocumentWrapper(w.Document));
+			DocumentChanged?.Invoke(d);
 		}
 
 		private DocumentWrapper MakeDocumentWrapper(Document d)
