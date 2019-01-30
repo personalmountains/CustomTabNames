@@ -25,7 +25,7 @@ using OLE = Microsoft.VisualStudio.OLE;
 
 namespace CustomTabNames
 {
-	sealed class MainThreadTimer
+	public sealed class MainThreadTimer
 	{
 		private Timer t = null;
 
@@ -97,9 +97,8 @@ namespace CustomTabNames
 			Options = (Options)GetDialogPage(typeof(Options));
 			this.DocumentManager = new DocumentManager(this.DTE);
 
-			// fired when documents or windows are opened; fixes the caption
-			// for that particular document
 			this.DocumentManager.DocumentChanged += OnDocumentChanged;
+			this.DocumentManager.ProjectsChanged += OnProjectsChanged;
 
 			Options.EnabledChanged += OnEnabledChanged;
 			Options.TemplateChanged += OnTemplateChanged;
@@ -217,6 +216,12 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			FixCaption(d);
+		}
+
+		private void OnProjectsChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			FixAllDocuments();
 		}
 
 		// walks through all opened documents and tries to set the caption for

@@ -61,12 +61,22 @@ namespace CustomTabNames
 		private readonly DTE2 dte;
 
 		private readonly DocumentEventHandlers docHandlers;
-		private uint docHandlersCookie = VSConstants.VSCOOKIE_NIL;
+		private readonly SolutionEventHandlers solHandlers;
 
 		// fired every time a document changes in a way that may require
 		// fixing the caption
 		public delegate void DocumentChangedHandler(DocumentWrapper d);
 		public event DocumentChangedHandler DocumentChanged;
+
+		// fired when projects are added, removed or renamed
+		//
+		public delegate void ProjectsChangedHandler();
+		public event ProjectsChangedHandler ProjectsChanged;
+
+		private readonly MainThreadTimer projectCountTimer
+			= new MainThreadTimer();
+
+		private IVsSolution solution = null;
 
 		// built-in projects that can be ignored
 		//
@@ -84,9 +94,11 @@ namespace CustomTabNames
 
 			this.dte = dte;
 			this.docHandlers = new DocumentEventHandlers();
+			this.solHandlers = new SolutionEventHandlers();
 
 			docHandlers.DocumentOpened += OnDocumentChanged;
 			docHandlers.DocumentRenamed += OnDocumentChanged;
+			solHandlers.ProjectCountChanged += OnProjectCountChanged;
 		}
 
 		// starts the manager
@@ -168,8 +180,32 @@ namespace CustomTabNames
 		public bool HasSingleProject()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			// todo
-			return false;
+
+			if (solution == null)
+			{
+				solution = CustomTabNames.Instance.ServiceProvider.GetService(
+					typeof(SVsSolution)) as IVsSolution;
+
+				if (solution == null)
+				{
+					Logger.Error("failed to get SVsSolution");
+					return false;
+				}
+			}
+
+			try
+			{
+				solution.GetProperty(
+					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
+
+				int i = (int)o;
+				return (i == 1);
+			}
+			catch(Exception e)
+			{
+				Logger.Error("failed to get project count, {0}", e.Message);
+				return false;
+			}
 		}
 
 		public bool IsInBuiltinProject(Document d)
@@ -189,30 +225,15 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
-				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
-
-			if (rdt == null)
-			{
-				Logger.Error("can't get SVsRunningDocumentTable");
-				return;
-			}
-
 			if (add)
 			{
-				Logger.Trace("adding events");
-
-				rdt.AdviseRunningDocTableEvents(
-					docHandlers, out docHandlersCookie);
+				docHandlers.Register();
+				solHandlers.Register();
 			}
 			else
 			{
-				Logger.Trace("removing events");
-
-				if (docHandlersCookie == VSConstants.VSCOOKIE_NIL)
-					Logger.Error("docHandlersCookie is nil");
-				else
-					rdt.UnadviseRunningDocTableEvents(docHandlersCookie);
+				solHandlers.Unregister();
+				docHandlers.Unregister();
 			}
 		}
 
@@ -224,6 +245,15 @@ namespace CustomTabNames
 			Logger.Trace("document changed: {0}", d.Document.FullName);
 
 			DocumentChanged?.Invoke(d);
+		}
+
+		// fired when a project was added or removed
+		//
+		private void OnProjectCountChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("project count changed");
+			projectCountTimer.Start(1000, () => { ProjectsChanged?.Invoke(); });
 		}
 	}
 }

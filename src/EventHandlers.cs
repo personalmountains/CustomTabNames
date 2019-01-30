@@ -9,6 +9,50 @@ namespace CustomTabNames
 		IVsSolutionEvents, IVsSolutionEvents2,
 		IVsSolutionEvents3, IVsSolutionEvents4
 	{
+		public delegate void ProjectCountChangedHandler();
+		public event ProjectCountChangedHandler ProjectCountChanged;
+
+		private uint cookie = VSConstants.VSCOOKIE_NIL;
+
+		public void Register()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var s = CustomTabNames.Instance.ServiceProvider.GetService(
+				typeof(SVsSolution)) as IVsSolution;
+
+			if (s == null)
+			{
+				Logger.Error("can't get SVsSolution");
+				return;
+			}
+
+			Logger.Trace("registering for solution events");
+			s.AdviseSolutionEvents(this, out cookie);
+		}
+
+		public void Unregister()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var s = CustomTabNames.Instance.ServiceProvider.GetService(
+				typeof(SVsSolution)) as IVsSolution;
+
+			if (s == null)
+			{
+				Logger.Error("can't get SVsSolution");
+				return;
+			}
+
+			Logger.Trace("unregistering for solution events");
+
+			if (cookie == VSConstants.VSCOOKIE_NIL)
+				Logger.Error("docHandlersCookie is nil");
+			else
+				s.UnadviseSolutionEvents(cookie);
+		}
+
+
 		public int OnAfterCloseSolution(object pUnkReserved)
 		{
 			return VSConstants.S_OK;
@@ -32,6 +76,8 @@ namespace CustomTabNames
 
 		public int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			ProjectCountChanged?.Invoke();
 			return VSConstants.S_OK;
 		}
 
@@ -47,6 +93,8 @@ namespace CustomTabNames
 
 		public int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
 		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			ProjectCountChanged?.Invoke();
 			return VSConstants.S_OK;
 		}
 
@@ -117,6 +165,47 @@ namespace CustomTabNames
 	{
 		public delegate void DocumentOpenedHandler(DocumentWrapper d);
 		public event DocumentOpenedHandler DocumentOpened, DocumentRenamed;
+
+		private uint cookie = VSConstants.VSCOOKIE_NIL;
+
+		public void Register()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
+				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+
+			if (rdt == null)
+			{
+				Logger.Error("can't get SVsRunningDocumentTable");
+				return;
+			}
+
+			Logger.Trace("adding events");
+
+			rdt.AdviseRunningDocTableEvents(this, out cookie);
+		}
+
+		public void Unregister()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
+				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
+
+			if (rdt == null)
+			{
+				Logger.Error("can't get SVsRunningDocumentTable");
+				return;
+			}
+			Logger.Trace("removing events");
+
+			if (cookie == VSConstants.VSCOOKIE_NIL)
+				Logger.Error("docHandlersCookie is nil");
+			else
+				rdt.UnadviseRunningDocTableEvents(cookie);
+		}
+
 
 		public int OnBeforeDocumentWindowShow(
 			uint cookie, int first, IVsWindowFrame wf)
