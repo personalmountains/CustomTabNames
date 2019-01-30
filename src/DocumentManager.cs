@@ -99,6 +99,29 @@ namespace CustomTabNames
 			docHandlers.DocumentOpened += OnDocumentChanged;
 			docHandlers.DocumentRenamed += OnDocumentChanged;
 			solHandlers.ProjectCountChanged += OnProjectCountChanged;
+			solHandlers.DocumentMoved += OnDocumentChanged;
+		}
+
+		private IVsSolution Solution
+		{
+			get
+			{
+				ThreadHelper.ThrowIfNotOnUIThread();
+
+				if (solution == null)
+				{
+					var o = CustomTabNames.Instance.ServiceProvider
+						.GetService(typeof(SVsSolution));
+
+					if (o != null)
+						solution = o as IVsSolution;
+
+					if (solution == null)
+						Logger.Error("failed to get SVsSolution");
+				}
+
+				return solution;
+			}
 		}
 
 		// starts the manager
@@ -177,25 +200,54 @@ namespace CustomTabNames
 			}
 		}
 
+		// calls f() for each loaded project
+		//
+		public void ForEachProjectHierarchy(Action<IVsHierarchy> f)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (Solution == null)
+				return;
+
+			Guid guid = Guid.Empty;
+
+			var e = solution.GetProjectEnum(
+				(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
+				ref guid, out var enumerator);
+
+			if (e != VSConstants.S_OK)
+			{
+				Logger.Error("GetProjectEnum failed, {0}", e);
+				return;
+			}
+
+			IVsHierarchy[] hierarchy = new IVsHierarchy[1] { null };
+
+			enumerator.Reset();
+
+			while (true)
+			{
+				e = enumerator.Next(1, hierarchy, out var fetched);
+				if (e != VSConstants.S_OK)
+					break;
+
+				if (fetched != 1)
+					break;
+
+				f(hierarchy[0]);
+			}
+		}
+
 		public bool HasSingleProject()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			if (solution == null)
-			{
-				solution = CustomTabNames.Instance.ServiceProvider.GetService(
-					typeof(SVsSolution)) as IVsSolution;
-
-				if (solution == null)
-				{
-					Logger.Error("failed to get SVsSolution");
-					return false;
-				}
-			}
+			if (Solution == null)
+				return false;
 
 			try
 			{
-				solution.GetProperty(
+				Solution.GetProperty(
 					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
 
 				int i = (int)o;
