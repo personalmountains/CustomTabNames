@@ -74,6 +74,10 @@ namespace CustomTabNames
 		// whether Start() has already been called
 		private bool started = false;
 
+		// services
+		IVsSolution solutionService = null;
+		IVsRunningDocumentTable rdtService = null;
+
 		private readonly MainThreadTimer timer = new MainThreadTimer();
 		private int failures = 0;
 		private const int FailureDelay = 2000;
@@ -93,6 +97,12 @@ namespace CustomTabNames
 
 			this.ServiceProvider = new ServiceProvider(
 				(OLE.Interop.IServiceProvider)this.DTE);
+
+			if (Solution == null || RDT == null)
+			{
+				Logger.Error("bailing out");
+				return;
+			}
 
 			Options = (Options)GetDialogPage(typeof(Options));
 			this.DocumentManager = new DocumentManager(this.DTE);
@@ -153,6 +163,45 @@ namespace CustomTabNames
 			started = false;
 			DocumentManager.Stop();
 			ResetAllDocuments();
+		}
+
+		public IVsSolution Solution
+		{
+			get
+			{
+				ThreadHelper.ThrowIfNotOnUIThread();
+
+				if (solutionService == null)
+				{
+					solutionService = CustomTabNames.Instance.ServiceProvider
+						.GetService(typeof(SVsSolution)) as IVsSolution;
+
+					if (solutionService == null)
+						Logger.Error("failed to get SVsSolution");
+				}
+
+				return solutionService;
+			}
+		}
+
+		public IVsRunningDocumentTable RDT
+		{
+			get
+			{
+				ThreadHelper.ThrowIfNotOnUIThread();
+
+				if (rdtService == null)
+				{
+					rdtService = CustomTabNames.Instance.ServiceProvider
+						.GetService(typeof(SVsRunningDocumentTable))
+							as IVsRunningDocumentTable;
+
+					if (rdtService == null)
+						Logger.Error("can't get SVsRunningDocumentTable");
+				}
+
+				return rdtService;
+			}
 		}
 
 		// fired when the template option changed, fixes all currently opened

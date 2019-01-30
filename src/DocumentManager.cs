@@ -76,8 +76,6 @@ namespace CustomTabNames
 		private readonly MainThreadTimer projectCountTimer
 			= new MainThreadTimer();
 
-		private IVsSolution solution = null;
-
 		// built-in projects that can be ignored
 		//
 		private static readonly List<string> BuiltinProjects = new List<string>()
@@ -100,28 +98,6 @@ namespace CustomTabNames
 			docHandlers.DocumentRenamed += OnDocumentChanged;
 			solHandlers.ProjectCountChanged += OnProjectCountChanged;
 			solHandlers.DocumentMoved += OnDocumentChanged;
-		}
-
-		private IVsSolution Solution
-		{
-			get
-			{
-				ThreadHelper.ThrowIfNotOnUIThread();
-
-				if (solution == null)
-				{
-					var o = CustomTabNames.Instance.ServiceProvider
-						.GetService(typeof(SVsSolution));
-
-					if (o != null)
-						solution = o as IVsSolution;
-
-					if (solution == null)
-						Logger.Error("failed to get SVsSolution");
-				}
-
-				return solution;
-			}
 		}
 
 		// starts the manager
@@ -206,12 +182,9 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			if (Solution == null)
-				return;
-
 			Guid guid = Guid.Empty;
 
-			var e = solution.GetProjectEnum(
+			var e = CustomTabNames.Instance.Solution.GetProjectEnum(
 				(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
 				ref guid, out var enumerator);
 
@@ -242,12 +215,9 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			if (Solution == null)
-				return false;
-
 			try
 			{
-				Solution.GetProperty(
+				CustomTabNames.Instance.Solution.GetProperty(
 					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
 
 				int i = (int)o;

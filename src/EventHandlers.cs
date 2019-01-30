@@ -140,18 +140,10 @@ namespace CustomTabNames
 		public void Register()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var s = CustomTabNames.Instance.ServiceProvider.GetService(
-				typeof(SVsSolution)) as IVsSolution;
-
-			if (s == null)
-			{
-				Logger.Error("can't get SVsSolution");
-				return;
-			}
-
 			Logger.Trace("registering for solution events");
-			s.AdviseSolutionEvents(this, out cookie);
+
+			CustomTabNames.Instance.Solution
+				.AdviseSolutionEvents(this, out cookie);
 
 			CustomTabNames.Instance.DocumentManager.ForEachProjectHierarchy((h) =>
 			{
@@ -163,15 +155,6 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var s = CustomTabNames.Instance.ServiceProvider.GetService(
-				typeof(SVsSolution)) as IVsSolution;
-
-			if (s == null)
-			{
-				Logger.Error("can't get SVsSolution");
-				return;
-			}
-
 			foreach (var hh in hierarchyHandlers)
 				RemoveProjectHierarchy(hh.Value.Hierarchy);
 
@@ -182,7 +165,7 @@ namespace CustomTabNames
 			if (cookie == VSConstants.VSCOOKIE_NIL)
 				Logger.Error("cookie is nil");
 			else
-				s.UnadviseSolutionEvents(cookie);
+				CustomTabNames.Instance.Solution.UnadviseSolutionEvents(cookie);
 		}
 
 
@@ -378,39 +361,25 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
-				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
-
-			if (rdt == null)
-			{
-				Logger.Error("can't get SVsRunningDocumentTable");
-				return;
-			}
-
 			Logger.Trace("registering for document events");
 
-			rdt.AdviseRunningDocTableEvents(this, out cookie);
+			CustomTabNames.Instance.RDT
+				.AdviseRunningDocTableEvents(this, out cookie);
 		}
 
 		public void Unregister()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var rdt = CustomTabNames.Instance.ServiceProvider.GetService(
-				typeof(SVsRunningDocumentTable)) as IVsRunningDocumentTable;
-
-			if (rdt == null)
-			{
-				Logger.Error("can't get SVsRunningDocumentTable");
-				return;
-			}
-
 			Logger.Trace("unregistering from document events");
 
 			if (cookie == VSConstants.VSCOOKIE_NIL)
+			{
 				Logger.Error("cookie is nil");
-			else
-				rdt.UnadviseRunningDocTableEvents(cookie);
+				return;
+			}
+
+			CustomTabNames.Instance.RDT.UnadviseRunningDocTableEvents(cookie);
 		}
 
 
