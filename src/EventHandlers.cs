@@ -57,21 +57,7 @@ namespace CustomTabNames
 
 			// item was moved
 
-			var e = Hierarchy.GetProperty(
-				itemidAdded, (int)__VSHPROPID.VSHPROPID_ExtObject,
-				out var extObject);
-
-			if (e != VSConstants.S_OK || extObject == null)
-			{
-				Logger.Error(
-					"OnItemAdded: GetProperty for ExtObject failed, {0}", e);
-
-				return VSConstants.S_OK;
-			}
-
-			var pi = extObject as ProjectItem;
-
-			var d = pi.Document;
+			var d = DocumentManager.DocumentFromItemID(Hierarchy, itemidAdded);
 			if (d == null)
 			{
 				// the item was moved, but the document probably isn't opened
@@ -145,7 +131,7 @@ namespace CustomTabNames
 			CustomTabNames.Instance.Solution
 				.AdviseSolutionEvents(this, out cookie);
 
-			CustomTabNames.Instance.DocumentManager.ForEachProjectHierarchy((h) =>
+			DocumentManager.ForEachProjectHierarchy((h) =>
 			{
 				AddProjectHierarchy(h);
 			});
@@ -156,7 +142,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			foreach (var hh in hierarchyHandlers)
-				RemoveProjectHierarchy(hh.Value.Hierarchy);
+				hh.Value.Unregister();
 
 			hierarchyHandlers.Clear();
 
@@ -394,17 +380,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			Window w = VsShellUtilities.GetWindowObject(wf);
-			if (w == null)
-			{
-				Logger.Error(
-					"OnBeforeDocumentWindowShow, " +
-					"couldn't get window object");
-
-				return VSConstants.S_OK;
-			}
-
-			Document d = w.Document;
+			var d = DocumentManager.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{
 				Logger.Error(

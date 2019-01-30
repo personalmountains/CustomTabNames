@@ -33,6 +33,8 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			Logger.Log("setting {0} to {1}", Document.FullName, s);
+
 			// the visible caption is made of a combination of the EditorCaption
 			// and OwnerCaption; setting the EditorCaption to null makes sure
 			// the caption can be controlled uniquely by OwnerCaption
@@ -45,6 +47,9 @@ namespace CustomTabNames
 		public void ResetCaption()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+
+			Logger.Log(
+				"resetting {0} to {1}", Document.FullName, Document.Name);
 
 			// todo: it'd be nice to set the caption back to a default value
 			// instead of hardcoding the name, but there doesn't seem to be a
@@ -150,15 +155,105 @@ namespace CustomTabNames
 			return WindowFrameFromPath(d.FullName);
 		}
 
-		// calls f() for each opened document
+		// returns the Document associated with the given IVsWindowFrame
 		//
-		public void ForEachDocument(Action<DocumentWrapper> f)
+		public static Document DocumentFromWindowFrame(IVsWindowFrame wf)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			foreach (var o in dte.Documents)
+			var w = VsShellUtilities.GetWindowObject(wf);
+			if (w == null)
+				return null;
+
+			return w.Document;
+		}
+
+		// returns a Document associated with an itemid in a hierarchy
+		//
+		public static Document DocumentFromItemID(IVsHierarchy h, uint itemid)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var e = h.GetProperty(
+				itemid, (int)__VSHPROPID.VSHPROPID_ExtObject, out var o);
+
+			if (e != VSConstants.S_OK || o == null)
 			{
-				var d = o as Document;
+				Logger.Error(
+					"DocumentFromID: GetProperty for extObject failed, {0}", e);
+
+				return null;
+			}
+
+			var pi = o as ProjectItem;
+			if (pi == null)
+			{
+				// not all items are project items, this happens particularly
+				// with ForEachDocument, because GetRunningDocumentsEnum()
+				// seems to return projects as well as documents
+				//
+				// therefore, don't warn, just ignore
+				return null;
+			}
+
+			return pi.Document;
+		}
+
+		// returns a Document from the given cookie
+		//
+		public static Document DocumentFromCookie(uint cookie)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var mk = CustomTabNames.Instance.RDT4.GetDocumentMoniker(cookie);
+
+			if (mk == null)
+			{
+				Logger.Error(
+					"GetDocumentMoniker failed for cookie {0} failed",
+					cookie);
+
+				return null;
+			}
+
+			var wf = WindowFrameFromPath(mk);
+			if (wf == null)
+				return null;
+
+			return DocumentFromWindowFrame(wf);
+		}
+
+		// calls f() for each opened document
+		//
+		public static void ForEachDocument(Action<DocumentWrapper> f)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var e = CustomTabNames.Instance.RDT.GetRunningDocumentsEnum(
+				out var enumerator);
+
+			if (e != VSConstants.S_OK)
+			{
+				Logger.Error("GetRunningDocumentsEnum failed, {0}", e);
+				return;
+			}
+
+			uint[] cookie = new uint[1] { VSConstants.VSCOOKIE_NIL };
+			enumerator.Reset();
+
+			while (true)
+			{
+				e = enumerator.Next(1, cookie, out var fetched);
+				if (e != VSConstants.S_OK)
+					break;
+
+				if (fetched != 1)
+					break;
+
+				if (cookie[0] == VSConstants.VSCOOKIE_NIL)
+					continue;
+
+				var d = DocumentFromCookie(cookie[0]);
 				if (d == null)
 					continue;
 
@@ -178,7 +273,7 @@ namespace CustomTabNames
 
 		// calls f() for each loaded project
 		//
-		public void ForEachProjectHierarchy(Action<IVsHierarchy> f)
+		public static void ForEachProjectHierarchy(Action<IVsHierarchy> f)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -195,7 +290,6 @@ namespace CustomTabNames
 			}
 
 			IVsHierarchy[] hierarchy = new IVsHierarchy[1] { null };
-
 			enumerator.Reset();
 
 			while (true)

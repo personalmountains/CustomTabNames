@@ -77,6 +77,7 @@ namespace CustomTabNames
 		// services
 		IVsSolution solutionService = null;
 		IVsRunningDocumentTable rdtService = null;
+		IVsRunningDocumentTable4 rdtService4 = null;
 
 		private readonly MainThreadTimer timer = new MainThreadTimer();
 		private int failures = 0;
@@ -177,7 +178,7 @@ namespace CustomTabNames
 						.GetService(typeof(SVsSolution)) as IVsSolution;
 
 					if (solutionService == null)
-						Logger.Error("failed to get SVsSolution");
+						Logger.Error("failed to get IVsSolution");
 				}
 
 				return solutionService;
@@ -197,10 +198,30 @@ namespace CustomTabNames
 							as IVsRunningDocumentTable;
 
 					if (rdtService == null)
-						Logger.Error("can't get SVsRunningDocumentTable");
+						Logger.Error("can't get IVsRunningDocumentTable");
 				}
 
 				return rdtService;
+			}
+		}
+
+		public IVsRunningDocumentTable4 RDT4
+		{
+			get
+			{
+				ThreadHelper.ThrowIfNotOnUIThread();
+
+				if (rdtService4 == null)
+				{
+					rdtService4 = CustomTabNames.Instance.ServiceProvider
+						.GetService(typeof(SVsRunningDocumentTable))
+							as IVsRunningDocumentTable4;
+
+					if (rdtService4 == null)
+						Logger.Error("can't get IVsRunningDocumentTable4");
+				}
+
+				return rdtService4;
 			}
 		}
 
@@ -342,11 +363,7 @@ namespace CustomTabNames
 		private void FixCaption(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var c = Variables.Expand(d.Document, Options.Template);
-			Logger.Log("caption for {0} is {1}", d.Document.FullName, c);
-
-			d.SetCaption(c);
+			d.SetCaption(Variables.Expand(d.Document, Options.Template));
 		}
 	}
 }
