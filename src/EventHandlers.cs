@@ -53,6 +53,36 @@ namespace CustomTabNames
 		}
 
 
+		public int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("OnAfterOpenProject");
+			ProjectCountChanged?.Invoke();
+			return VSConstants.S_OK;
+		}
+
+		public int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("OnBeforeCloseProject");
+			ProjectCountChanged?.Invoke();
+			return VSConstants.S_OK;
+		}
+
+		public int OnAfterRenameProject(IVsHierarchy hierarchy)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("OnAfterRenameProject");
+			ProjectCountChanged?.Invoke();
+			return VSConstants.S_OK;
+		}
+
+
+		public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
+		{
+			return VSConstants.S_OK;
+		}
+
 		public int OnAfterCloseSolution(object pUnkReserved)
 		{
 			return VSConstants.S_OK;
@@ -74,27 +104,8 @@ namespace CustomTabNames
 			return VSConstants.S_OK;
 		}
 
-		public int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			ProjectCountChanged?.Invoke();
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
-		{
-			return VSConstants.S_OK;
-		}
-
 		public int OnAfterOpeningChildren(IVsHierarchy hierarchy)
 		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			ProjectCountChanged?.Invoke();
 			return VSConstants.S_OK;
 		}
 
@@ -142,11 +153,6 @@ namespace CustomTabNames
 		}
 
 		public int OnAfterChangeProjectParent(IVsHierarchy hierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterRenameProject(IVsHierarchy hierarchy)
 		{
 			return VSConstants.S_OK;
 		}
@@ -266,7 +272,7 @@ namespace CustomTabNames
 			var f = DocumentManager.WindowFrameFromPath(newPath);
 			if (f == null)
 			{
-				Logger.Error("OnAfterAttributeChangeEx can't get frame");
+				// this seems to happen when renaming projects, not sure why
 				return VSConstants.S_OK;
 			}
 

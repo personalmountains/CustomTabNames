@@ -221,6 +221,7 @@ namespace CustomTabNames
 		private void OnProjectsChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("projects changed");
 			FixAllDocuments();
 		}
 
