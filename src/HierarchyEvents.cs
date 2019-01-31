@@ -77,6 +77,8 @@ namespace CustomTabNames
 		}
 
 
+		// fired when an item is moved or added
+		//
 		public override int OnItemAdded(
 			uint parent, uint prevSibling, uint item)
 		{
@@ -87,7 +89,14 @@ namespace CustomTabNames
 				parent, prevSibling, item);
 
 			// it's generally impossible to differentiate between moves and
-			// renames for either files or folders
+			// renames for either files or folders, so they're merged into one
+			// rename event
+
+			// OnItemAdded for folders and files is fired for C# projects on
+			// move and rename, but only on move for C++ projects for move
+			//
+			// renaming a file or a folder for C++ projects fires
+			// OnPropertyChanged, which is handled below
 
 			if (Utilities.ItemIsFolder(Hierarchy, item))
 			{
@@ -95,25 +104,13 @@ namespace CustomTabNames
 			}
 			else
 			{
-				var d = Utilities.DocumentFromItemID(Hierarchy, item);
-
-				if (d == null)
+				if (Utilities.DocumentFromItemID(Hierarchy, item) == null)
 				{
-					// this happens when renaming C# files, but it's fine
-					// because it's already handled in OnAfterAttributeChangeEx
+					// this happens when renaming C# files for whatever reason,
+					// but it's fine because it's already handled in
+					// OnAfterAttributeChangeEx
 					return VSConstants.S_OK;
 				}
-
-				var project = d.ProjectItem?.ContainingProject?.Kind;
-				const string csProject = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
-
-				if (project == csProject)
-				{
-					// don't fire for C# projects; the reverse is tempting, but it's
-					// better to have multiple events than none
-					return VSConstants.S_OK;
-				}
-
 
 				DocumentRenamed?.Invoke(Hierarchy, item);
 			}
@@ -121,13 +118,16 @@ namespace CustomTabNames
 			return VSConstants.S_OK;
 		}
 
+		// fired when various properties are changed on items, like the caption,
+		// but also expanded state, etc.
+		//
 		public override int OnPropertyChanged(uint item, int prop, uint flags)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			if (prop != (int)__VSHPROPID.VSHPROPID_Caption)
 			{
-				// ignore everything but changing the caption
+				// ignore everything except renaming
 				return VSConstants.S_OK;
 			}
 
@@ -135,12 +135,30 @@ namespace CustomTabNames
 				"OnPropertyChanged caption: item={0} prop={1} flags={2}",
 				item, prop, flags);
 
+			// this is fired when renaming:
+			//
+			// 1) projects
+			// this is handled here for all projects and ignored in
+			// DocumentEvents.OnAfterAttributeChangeEx
+			//
+			// 2) C++ folders
+			// this is handled here
+			//
+			// 3) C++ files
+			// this is ignored because DocumentEvents.OnAfterAttributeChangeEx
+			// is also fired; for whatever reason, OnPropertyChanged is fired
+			// *3*  times with the exact same arguments, and so cannot be
+			// differentiated, which would force an update three times every
+			// time a file is renamed
+
 			if (item == (uint)VSConstants.VSITEMID.Root)
 			{
+				// itemid of root means this is a project
 				ProjectRenamed?.Invoke(Hierarchy);
 			}
 			else if (Utilities.ItemIsFolder(Hierarchy, item))
 			{
+				// this is a C++ folder
 				FolderRenamed?.Invoke(Hierarchy, item);
 			}
 

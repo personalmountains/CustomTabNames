@@ -4,37 +4,57 @@ using System;
 
 namespace CustomTabNames
 {
-	// these are used as base classes in EventHandlers
-	//
-	// they define delegates and also implement the methods that are not
-	// used so EventHandlers can look a bit cleaner
-	//
-	// these are the events that seem to be fired for various components:
-	//
-	//                  C++                            C#
-	// add project      Sol.OnAfterOpenProject         same
-	// remove project   Sol.OnBeforeCloseProject       same
-	// rename project   Hier.OnPropertyChanged         Hier.OnPropertyChanged
-	//                  --                             Doc.OnAfterAttributeChangeEx
-	//                  --                             Sol.OnAfterRenameProject
-	//
-	// rename folder    Hier.OnPropertyChanged         Hier.OnItemAdded
-	// move folder      Hier.OnItemAdded               same
-	//
-	// rename file      Hier.OnPropertyChanged x3      Hier.OnItemAdded
-	//                  Doc.OnAfterAttributeChangeEx   same
-	//                    (only when opened)
-	// move file        Hier.OnItemAdded               same
-	//                  --                             Doc.OnAfterAttributeChangeEx
-	//                                                   (only when opened)
-	// open file        OnBeforeDocumentWindowShow     same
-	//
-	//
-	// there seems to be a bug where the first folder move in a C# project doesn't
-	// trigger _any_ handlers at all, no idea how to fix that
-	//
-	// todo: renaming a C# folder triggers both a full update _and_ an
-	// OnAfterAttributeChangeEx per file in that folder (and it's recursive!)
+
+// these are used as base classes in EventHandlers
+//
+// they define delegates and also implement the methods that are not
+// used so the various concrete handlers can look a bit cleaner
+//
+// these are the events that seem to be fired for various components:
+//
+//   S=SolutionEvents  H=HierarchyEvents  D=DocumentEvents
+//
+//      when an action fires more than one event, the one in brackets
+//      is ignored
+//
+// +---------+------------------------------+----------------------------------+
+// |         | C++                          | C#                               |
+// +---------+------------------------------+----------------------------------+
+// | add     | S.OnAfterOpenProject         | S.OnAfterOpenProject             |
+// | project |                              |                                  |
+// +---------+------------------------------+----------------------------------+
+// | remove  | S.OnBeforeCloseProject       | S.OnBeforeCloseProject           |
+// | project |                              |                                  |
+// +---------+------------------------------+----------------------------------+
+// | rename  | H.OnPropertyChanged          | H.OnPropertyChanged              |
+// | project |                              | (D.OnAfterAttributeChangeEx)     |
+// +---------+------------------------------+----------------------------------+
+// | rename  | H.OnPropertyChanged          | H.OnItemAdded                    |
+// | folder  |                              |                                  |
+// +---------+------------------------------+----------------------------------+
+// | move    | H.OnItemAdded                | H.OnItemAdded                    |
+// | folder  |                              |                                  |
+// +---------+------------------------------+----------------------------------+
+// | rename  | D.OnAfterAttributeChangeEx   | D.OnAfterAttributeChangeEx       |
+// | file    | (H.OnPropertyChanged x3)     | (H.OnItemAdded)                  |
+// +---------+------------------------------+----------------------------------+
+// | move    | H.OnItemAdded                | D.OnAfterAttributeChangeEx       |
+// | file    |                              | (H.OnItemAdded)                  |
+// +---------+------------------------------+----------------------------------+
+// | open    | D.OnBeforeDocumentWindowShow | D.OnBeforeDocumentWindowShow     |
+// | file    |                              |                                  |
+// +---------+------------------------------+----------------------------------+
+//
+// todo: there seems to be a bug where the first folder move in a C# project
+// doesn't trigger _any_ handlers at all, no idea how to fix that
+//
+// todo: renaming a C# folder triggers both a full update _and_ an
+// OnAfterAttributeChangeEx per file in that folder (and it's recursive!)
+//
+// todo: fixing all the redundant events made it so that opened documents
+// are not forced to load anymore when opening a solution, which is a good
+// thing, but it means that these tabs are not updated; an an option to
+// force a full update when loading solution? or something
 
 
 	public abstract class EventHandlersBase : LoggingContext

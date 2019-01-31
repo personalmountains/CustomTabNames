@@ -4,9 +4,7 @@ using Microsoft.VisualStudio.Shell.Interop;
 
 namespace CustomTabNames
 {
-	// handles document events, like opening and renaming; these are also called
-	// for project events, but they're ignored because they're ignored in the
-	// solution or hierarchy events above
+	// handles some document events, like opening and renaming
 	//
 	public sealed class DocumentEventHandlers : DocumentEventHandlersBase
 	{
@@ -66,6 +64,10 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// this may be called any time after the solution is loaded since
+			// window frames are lazily created when a tab is clicked for the
+			// first time
+
 			if (first == 0)
 			{
 				// only handle the first time a document is shown
@@ -90,6 +92,7 @@ namespace CustomTabNames
 			}
 
 			DocumentOpened?.Invoke(h, id);
+
 			return VSConstants.S_OK;
 		}
 
@@ -110,6 +113,17 @@ namespace CustomTabNames
 				// don't bother with anything else than rename
 				return VSConstants.S_OK;
 			}
+
+			// this is fired for:
+			//
+			// 1) renaming a C# project
+			// ignored because it also fires HierarchyEvents.OnPropertyChanged
+			//
+			// 2) renaming a file for both C++ and C# projects
+			// this is handled here
+			//
+			// 3) moving a C# file
+			// this is handled here and ignored in HierarchyEvents.OnItemAdded
 
 			Trace(
 				"OnAfterAttributeChangeEx rename: cookie={0} atts={1} " +

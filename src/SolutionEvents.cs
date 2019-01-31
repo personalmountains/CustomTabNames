@@ -5,6 +5,11 @@ using System.Collections.Generic;
 
 namespace CustomTabNames
 {
+	// solution events are fired when projects are added and removed
+	//
+	// for each project a HierarchyEventHandlers is created and attached,
+	// because hierarchy events are per-project, not global
+	//
 	public sealed class SolutionEventHandlers : SolutionEventHandlersBase
 	{
 		public event ProjectHandler ProjectAdded, ProjectRemoved, ProjectRenamed;
@@ -85,7 +90,8 @@ namespace CustomTabNames
 		}
 
 
-		// fired once per project in the current solution
+		// fired once per project in the current solution when a project is
+		// added or opened
 		//
 		public override int OnAfterOpenProject(
 			IVsHierarchy hierarchy, int added)
@@ -93,18 +99,27 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("OnAfterOpenProject");
 
+			// this is fired once per project when loading a solution, but also
+			// when a project is added to a solution that's already loaded
+			//
+			// hierarchy events need to be registered in both cases, but the
+			// ProjectAdded event doesn't need to be fired while loading a
+			// solution
+
 			// register for hierarchy events for this project and add it to the
 			// list
 			AddProjectHierarchy(hierarchy);
 
-			ProjectAdded?.Invoke(hierarchy);
+			if (added != 0)
+				ProjectAdded?.Invoke(hierarchy);
 
 			return VSConstants.S_OK;
 		}
 
-		// fired just _before_ a project is removed from the solution; there
-		// is no corresponding OnAfterCloseProject, which is unfortunate, see
-		// DocumentManager.OnProjectCountChanged()
+		// fired just _before_ a project is removed from the solution or when
+		// a solution is currently being closed; there is no corresponding
+		// OnAfterCloseProject, which is unfortunate, so a timer has to be
+		// used to fire the event once internal stuff has been updated
 		//
 		public override int OnBeforeCloseProject(
 			IVsHierarchy hierarchy, int removed)
@@ -112,8 +127,18 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("OnBeforeCloseProject");
 
+			// this is fired once per project when closing a solution, but also
+			// when a project is removed from a solution that's already loaded
+			//
+			// hierarchy events need to be unregistered in both cases, but the
+			// ProjectRemoved event doesn't need to be fired while unloading a
+			// solution
+
 			// unregister for hierarchy events and remove it from the list
 			RemoveProjectHierarchy(hierarchy);
+
+			if (removed != 0)
+				return VSConstants.S_OK;
 
 			// this is an "on before" handler, and so the project count hasn't
 			// been updated yet
@@ -139,10 +164,6 @@ namespace CustomTabNames
 			return VSConstants.S_OK;
 		}
 
-		// fired after a project is renamed on disk
-		//
-
-		// fired after a document is moved on disk
 		// called once per project, registers for project hierarchy events and
 		// adds the handler to the list
 		//
@@ -171,9 +192,10 @@ namespace CustomTabNames
 
 			var hh = new HierarchyEventHandlers(h);
 
-			// registers for hierarchy events on this project
+			// registering for hierarchy events on this project
 			hh.Register();
 
+			// forwarding
 			hh.ProjectRenamed += ProjectRenamed;
 			hh.FolderRenamed += FolderRenamed;
 			hh.DocumentRenamed += DocumentRenamed;
