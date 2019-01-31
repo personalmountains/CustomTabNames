@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -8,6 +9,9 @@ using Task = System.Threading.Tasks.Task;
 
 namespace CustomTabNames
 {
+	// starts a timer, switches to the main thread when it fires and calls the
+	// given Action
+	//
 	public sealed class MainThreadTimer : IDisposable
 	{
 		private Timer t = null;
@@ -42,6 +46,17 @@ namespace CustomTabNames
 
 	public sealed class Utilities
 	{
+		// splits the given path on slash and backslash
+		//
+		public static string[] SplitPath(string path)
+		{
+			var seps = new char[] {
+				Path.DirectorySeparatorChar,
+				Path.AltDirectorySeparatorChar };
+
+			return path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+		}
+
 		// returns an IVsWindowFrame associated with the given path
 		//
 		// there doesn't seem to be any good way of getting a IVsWindowFrame

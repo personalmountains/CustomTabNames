@@ -49,6 +49,9 @@ namespace CustomTabNames
 		IVsRunningDocumentTable4 rdt4 = null;
 		IVsOutputWindow outputWindow = null;
 
+		// this timer is used when fixing documents fails because frames aren't
+		// ready yet; this happens when the projects are in the process of
+		// loading
 		private readonly MainThreadTimer timer = new MainThreadTimer();
 		private int failures = 0;
 		private const int FailureDelay = 2000;
