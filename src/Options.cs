@@ -163,8 +163,8 @@ namespace CustomTabNames
 			{
 				if (value < 0)
 					value = 0;
-				else if (value > 3)
-					value = 3;
+				else if (value > 4)
+					value = 4;
 
 				if (loggingLevel != value)
 				{

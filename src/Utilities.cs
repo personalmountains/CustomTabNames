@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
@@ -123,7 +124,21 @@ namespace CustomTabNames
 			}
 
 			if (o is ProjectItem pi)
-				return pi.Document;
+			{
+				// pi.Document sometimes throws instead of just returning null,
+				// like for folders in a C# project; the goal is just to return
+				// null if this isn't a document, so eat the exception and do
+				// that
+
+				try
+				{
+					return pi.Document;
+				}
+				catch (COMException)
+				{
+					return null;
+				}
+			}
 
 			// not all items are project items, this happens particularly
 			// with ForEachDocument, because GetRunningDocumentsEnum()

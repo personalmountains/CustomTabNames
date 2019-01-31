@@ -48,7 +48,7 @@ namespace CustomTabNames
 			// [2] is "text"
 			var re = new Regex(@"\$\(\s*([a-zA-Z]+)\s*(?:'(.*?)')?\)");
 
-			Logger.Trace(
+			Logger.VariableTrace(
 				"making caption for {0} using template {1}",
 				d.FullName, s);
 
@@ -65,7 +65,7 @@ namespace CustomTabNames
 				s = ReplaceMatch(s, m, replacement);
 			}
 
-			Logger.Trace("  . caption is now {0}", s);
+			Logger.VariableTrace("  . caption is now {0}", s);
 
 			return s;
 		}
@@ -87,7 +87,8 @@ namespace CustomTabNames
 				if (s.Length != 0)
 					s += text;
 
-				Logger.Trace("  . variable {0} replaced by '{1}'", name, s);
+				Logger.VariableTrace(
+					"  . variable {0} replaced by '{1}'", name, s);
 
 				return s;
 			}
@@ -95,7 +96,7 @@ namespace CustomTabNames
 			{
 				// not found in the dictionary, put the variable name verbatim
 				// to notify the user
-				Logger.Trace("  . variable {0} not found", name);
+				Logger.VariableTrace("  . variable {0} not found", name);
 				return name;
 			}
 		}

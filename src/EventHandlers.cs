@@ -7,8 +7,8 @@ using System.Collections.Generic;
 namespace CustomTabNames
 {
 	// hierarchy events are fired when items in the solution explorer change;
-	// this is used to update captions when filters are renamed, items are moved
-	// between filters, projects are renamed, etc.
+	// this is used to update captions when folders are renamed, items are moved
+	// between folders, projects are renamed, etc.
 	//
 	// while the solution and document events are global, the hierarchy events
 	// must be registered per project; this is done in two places in
@@ -20,11 +20,11 @@ namespace CustomTabNames
 		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
 
-		// fired when documents are moved between filters
+		// fired when documents are moved between folders
 		public delegate void DocumentMovedHandler(DocumentWrapper d);
 		public event DocumentMovedHandler DocumentMoved;
 
-		// fired when filters or projects are renamed
+		// fired when folders or projects are renamed
 		public delegate void ContainerNameChangedHandler();
 		public event ContainerNameChangedHandler ContainerNameChanged;
 
@@ -113,20 +113,37 @@ namespace CustomTabNames
 			var d = Utilities.DocumentFromItemID(Hierarchy, item);
 			if (d == null)
 			{
-				// this happens when what's being moved is not a document
-				// todo: this is wrong, filters can be moved too, and captions
-				// need fixing
-				//
-				// this also happens when renaming c# files if they're opened,
-				// who knows why
+				// this may be a folder or an unopened document
+
+				if (Utilities.ItemIsFolder(Hierarchy, item))
+				{
+					if (ShouldFireForFolder(item))
+					{
+						// this is a non-empty folder that was moved
+						//
+						// todo: this could perhaps be more efficient by only
+						// fixing documents that are under this folder
+
+						ContainerNameChanged?.Invoke();
+					}
+
+					// this isn't a document, so don't bother with the rest
+
+					return VSConstants.S_OK;
+				}
+
+				// this isn't a folder and it has no associated document, this
+				// happens for unopened documents, also when renaming c# files
+				// even if they're opened, who knows why
+				Trace("OnItemAdded: no document");
 				return VSConstants.S_OK;
 			}
 
 			var wf = Utilities.WindowFrameFromDocument(d);
 			if (wf == null)
 			{
-				// this happens when an item was moved in the hierarchy without
-				// being opened
+				// this sometimes happens when an item was moved in the
+				// hierarchy without being opened
 				Error("OnItemAdded: document {0} has no frame", d.FullName);
 				return VSConstants.S_OK;
 			}
@@ -152,9 +169,17 @@ namespace CustomTabNames
 				"OnPropertyChanged caption: item={0} prop={1} flags={2}",
 				item, prop, flags);
 
+			if (Utilities.ItemIsFolder(Hierarchy, item))
+			{
+				// don't trigger a full update for empty folders
+
+				if (!ShouldFireForFolder(item))
+					return VSConstants.S_OK;
+			}
+
 			// this catches both renaming projects and files
 			// todo: this could perhaps be more efficient by only fixing
-			// documents that are under this filter (if it's a filter)
+			// documents that are under this folder (if it's a folder)
 
 			ContainerNameChanged?.Invoke();
 
@@ -180,6 +205,40 @@ namespace CustomTabNames
 		public int OnItemsAppended(uint itemidParent)
 		{
 			return VSConstants.S_OK;
+		}
+
+		private bool ShouldFireForFolder(uint item)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			// todo: this doesn't handle a folder that contains other empty
+			// folders
+
+			var e = Hierarchy.GetProperty(
+				item, (int)__VSHPROPID.VSHPROPID_FirstChild,
+				out var childObject);
+
+			// careful: for whatever reason, FirstChild is an int instead
+			// of a uint
+
+			if (e != VSConstants.S_OK || !(childObject is int))
+			{
+				ErrorCode(
+					e, "OnPropertyChanged failed to get folder " +
+					"first child");
+			}
+			else
+			{
+				var child = (uint)(int)childObject;
+
+				if (child == (uint)VSConstants.VSITEMID.Nil)
+				{
+					Trace("this is a folder without children, ignoring");
+					return false;
+				}
+			}
+
+			return true;
 		}
 	}
 
@@ -338,7 +397,7 @@ namespace CustomTabNames
 			DocumentMoved?.Invoke(d);
 		}
 
-		// fired by the HierarchyEventHandlers (per-project) when a filter or
+		// fired by the HierarchyEventHandlers (per-project) when a folder or
 		// the project itself was renamed
 		//
 		private void OnContainerNameChanged()

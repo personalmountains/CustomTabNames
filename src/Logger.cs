@@ -62,6 +62,15 @@ namespace CustomTabNames
 			LogImpl(3, format, args);
 		}
 
+		// logs the given string by calling String.Format()
+		//
+		public static void VariableTrace(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(4, format, args);
+		}
+
+
 		private static void LogImpl(int level, string format, object[] args)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
