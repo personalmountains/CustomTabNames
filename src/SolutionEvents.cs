@@ -153,9 +153,6 @@ namespace CustomTabNames
 			// in any case, the close can probably still be canceled by the
 			// user if there are unsaved changes, so this may be a false
 			// positive
-			//
-			// todo: try to find a way to get a callback to fire when the count
-			// actually changes instead of using a stupid timer
 
 			projectCloseTimer.Start(1000, () =>
 			{

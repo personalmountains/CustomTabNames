@@ -46,22 +46,8 @@ namespace CustomTabNames
 // | file     |                              |                                |
 // +----------+------------------------------+--------------------------------+
 //
-// todo: there seems to be a bug where the first folder move in a C# project
-// doesn't trigger _any_ handlers at all, no idea how to fix that
 //
-// todo: renaming a C# folder triggers both a full update _and_ an
-// OnAfterAttributeChangeEx per file in that folder (and it's recursive!)
 //
-// todo: fixing all the redundant events made it so that opened documents
-// are not forced to load anymore when opening a solution, which is a good
-// thing, but it means that these tabs are not updated; an an option to
-// force a full update when loading solution? or something
-//
-//    it's also unclear how to make this work, because there's no obvious place
-// where the RDT is loaded, trying to walk it in OnAfterOpenSolution only
-// returns entries for project and solution files, not documents;
-// OnAfterLoadProject and OnAfterOpenProject both also fail, and some events
-// in RDT also don't work
 
 
 	public abstract class EventHandlersBase : LoggingContext

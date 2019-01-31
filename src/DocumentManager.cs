@@ -49,9 +49,6 @@ namespace CustomTabNames
 
 			Log("resetting to {0}", Document.Name);
 
-			// todo: it'd be nice to set the caption back to a default value
-			// instead of hardcoding the name, but there doesn't seem to be a
-			// way to do that
 			SetCaption(Document.Name);
 		}
 	}
