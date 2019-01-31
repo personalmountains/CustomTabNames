@@ -127,13 +127,13 @@ namespace CustomTabNames
 
 			if (Options.IgnoreSingleProject)
 			{
-				if (DocumentManager.HasSingleProject())
+				if (Utilities.HasSingleProject())
 					return "";
 			}
 
 			if (Options.IgnoreBuiltinProjects)
 			{
-				if (DocumentManager.IsInBuiltinProject(d))
+				if (Utilities.IsInBuiltinProject(d))
 					return "";
 			}
 
@@ -245,7 +245,7 @@ namespace CustomTabNames
 			}
 
 
-			if (DocumentManager.IsInBuiltinProject(d))
+			if (Utilities.IsInBuiltinProject(d))
 			{
 				// sigh
 				//

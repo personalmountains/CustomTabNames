@@ -227,7 +227,7 @@ namespace CustomTabNames
 			// go through every loaded project and register for hierarchy
 			// events; this handles cases where the extension was loaded after
 			// the current solution
-			DocumentManager.ForEachProjectHierarchy((h) =>
+			Utilities.ForEachProjectHierarchy((h) =>
 			{
 				AddProjectHierarchy(h);
 			});

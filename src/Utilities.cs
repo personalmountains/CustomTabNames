@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -47,6 +48,16 @@ namespace CustomTabNames
 
 	public sealed class Utilities
 	{
+		// built-in projects that can be ignored
+		//
+		private static readonly List<string> BuiltinProjects = new List<string>()
+		{
+			EnvDTE.Constants.vsProjectKindMisc,
+			EnvDTE.Constants.vsProjectKindSolutionItems,
+			EnvDTE.Constants.vsProjectKindUnmodeled
+		};
+
+
 		// splits the given path on slash and backslash
 		//
 		public static string[] SplitPath(string path)
@@ -56,6 +67,178 @@ namespace CustomTabNames
 				Path.AltDirectorySeparatorChar };
 
 			return path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+		}
+
+		// calls f() for each opened document
+		//
+		public static void ForEachDocument(Action<DocumentWrapper> f)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			// getting enumerator
+			var e = Package.Instance.RDT.GetRunningDocumentsEnum(
+				out var enumerator);
+
+			if (e != VSConstants.S_OK)
+			{
+				Logger.ErrorCode(
+					e, "ForEachDocument: GetRunningDocumentsEnum failed");
+
+				return;
+			}
+
+			// will store one cookie at a time, but Next() still requires an
+			// array
+			uint[] cookies = new uint[1] { VSConstants.VSCOOKIE_NIL };
+
+			enumerator.Reset();
+
+			while (true)
+			{
+				e = enumerator.Next(1, cookies, out var fetched);
+
+				if (e == VSConstants.S_FALSE || fetched != 1)
+				{
+					// done
+					break;
+				}
+
+				if (e != VSConstants.S_OK)
+				{
+					Logger.ErrorCode(e, "ForEachDocument: enum next failed");
+					break;
+				}
+
+
+				var cookie = cookies[0];
+
+				if (cookie == VSConstants.VSCOOKIE_NIL)
+				{
+					// shouldn't happen
+					continue;
+				}
+
+				var d = Utilities.DocumentFromCookie(cookie);
+				if (d == null)
+					continue;
+
+				var wf = Utilities.WindowFrameFromDocument(d);
+				if (wf == null)
+				{
+					// this seems to happen for documents that haven't loaded
+					// yet, they should get picked up by
+					// DocumentEventHandlers.OnBeforeDocumentWindowShow later
+					Logger.Log(
+						"ForEachDocument: skipping {0}, no frame", d.FullName);
+
+					continue;
+				}
+
+				f(new DocumentWrapper(d, wf));
+			}
+		}
+
+		// calls f() for each loaded project
+		//
+		public static void ForEachProjectHierarchy(Action<IVsHierarchy> f)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			Guid guid = Guid.Empty;
+
+			// getting enumerator
+			var e = Package.Instance.Solution.GetProjectEnum(
+				(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
+				ref guid, out var enumerator);
+
+			if (e != VSConstants.S_OK)
+			{
+				Logger.ErrorCode(
+					e, "ForEachProjectHierarchy: GetProjectEnum failed");
+
+				return;
+			}
+
+			// will store one hierarchy at a time, but Next() still requires an
+			// array
+			IVsHierarchy[] hierarchies = new IVsHierarchy[1] { null };
+
+			enumerator.Reset();
+
+			while (true)
+			{
+				e = enumerator.Next(1, hierarchies, out var fetched);
+
+				if (e == VSConstants.S_FALSE || fetched != 1)
+				{
+					// done
+					break;
+				}
+
+				if (e != VSConstants.S_OK)
+				{
+					Logger.ErrorCode(
+						e, "ForEachProjectHierarchy: enum next failed");
+
+					break;
+				}
+
+
+				var h = hierarchies[0];
+
+				if (h == null)
+				{
+					// shouldn't happen
+					continue;
+				}
+
+				f(h);
+			}
+		}
+
+		// returns whether the current solution only has one project in it
+		//
+		public static bool HasSingleProject()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			try
+			{
+				var e = Package.Instance.Solution.GetProperty(
+					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
+
+				if (e != VSConstants.S_OK || !(o is int))
+				{
+					Logger.ErrorCode(
+						e, "HasSingleProject: failed to get project count");
+
+					return false;
+				}
+
+				int i = (int)o;
+				return (i == 1);
+			}
+			catch (Exception e)
+			{
+				Logger.Error(
+					"HasSingleProject: failed to get project count, {0}",
+					e.Message);
+
+				return false;
+			}
+		}
+
+		// returns whether the given document is in a builtin project
+		//
+		public static bool IsInBuiltinProject(Document d)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var k = d?.ProjectItem?.ContainingProject?.Kind;
+			if (k == null)
+				return false;
+
+			return BuiltinProjects.Contains(k);
 		}
 
 		// returns an IVsWindowFrame associated with the given path

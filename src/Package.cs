@@ -293,7 +293,7 @@ namespace CustomTabNames
 
 			try
 			{
-				DocumentManager.ForEachDocument((d) =>
+				Utilities.ForEachDocument((d) =>
 				{
 					FixCaption(d);
 				});
@@ -334,7 +334,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("reseting all documents");
 
-			DocumentManager.ForEachDocument((d) =>
+			Utilities.ForEachDocument((d) =>
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 				d.ResetCaption();
