@@ -404,6 +404,13 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
+			if (wf == null)
+			{
+				// doesn't seem to happen, but handlers assume it's not null
+				return VSConstants.S_OK;
+			}
+
+
 			var d = Utilities.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{

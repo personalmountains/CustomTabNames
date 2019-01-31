@@ -22,37 +22,6 @@ using Task = System.Threading.Tasks.Task;
 
 namespace CustomTabNames
 {
-	public sealed class MainThreadTimer : IDisposable
-	{
-		private Timer t = null;
-
-		public void Dispose()
-		{
-			t?.Dispose();
-		}
-
-		public void Start(int ms, Action a)
-		{
-			if (t == null)
-				t = new Timer(OnTimer, a, ms, Timeout.Infinite);
-			else
-				t.Change(ms, Timeout.Infinite);
-		}
-
-		private void OnTimer(object a)
-		{
-			_ = OnMainThreadAsync((Action)a);
-		}
-
-		private async Task OnMainThreadAsync(Action a)
-		{
-			await Package.Instance
-				.JoinableTaskFactory.SwitchToMainThreadAsync();
-
-			a();
-		}
-	}
-
 	[PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
 	[InstalledProductRegistration(Strings.ExtensionName, Strings.ExtensionDescription, Strings.ExtensionVersion)]
 	[ProvideService(typeof(Package), IsAsyncQueryable = true)]

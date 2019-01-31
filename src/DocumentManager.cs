@@ -12,9 +12,6 @@ namespace CustomTabNames
 	// the Document is used to feed information to variables, like path and
 	// filters; the IVsWindowFrame is required to set the actual caption
 	//
-	// the frame might be null in cases when the document is opened, but no
-	// window has been created yet
-	//
 	public sealed class DocumentWrapper
 	{
 		public Document Document { get; private set; }
@@ -57,13 +54,17 @@ namespace CustomTabNames
 		}
 	}
 
+
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
 	public sealed class DocumentManager : IDisposable
 	{
-		private readonly DocumentEventHandlers docHandlers;
-		private readonly SolutionEventHandlers solHandlers;
+		private readonly DocumentEventHandlers docHandlers
+			 = new DocumentEventHandlers();
+
+		private readonly SolutionEventHandlers solHandlers
+			= new SolutionEventHandlers();
 
 		// fired every time a document changes in a way that may require
 		// fixing the caption
@@ -75,6 +76,7 @@ namespace CustomTabNames
 		public delegate void ContainersChangedHandler();
 		public event ContainersChangedHandler ContainersChanged;
 
+		// see OnProjectCountChanged()
 		private readonly MainThreadTimer projectCountTimer
 			= new MainThreadTimer();
 
@@ -92,11 +94,9 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			this.docHandlers = new DocumentEventHandlers();
-			this.solHandlers = new SolutionEventHandlers();
-
 			docHandlers.DocumentOpened += OnDocumentChanged;
 			docHandlers.DocumentRenamed += OnDocumentChanged;
+
 			solHandlers.ProjectCountChanged += OnProjectCountChanged;
 			solHandlers.DocumentMoved += OnDocumentChanged;
 			solHandlers.ContainerNameChanged += OnContainerNameChanged;
@@ -116,6 +116,7 @@ namespace CustomTabNames
 		}
 
 		// stops the manager
+		//
 		public void Stop()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -128,6 +129,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// getting enumerator
 			var e = Package.Instance.RDT.GetRunningDocumentsEnum(
 				out var enumerator);
 
@@ -137,16 +139,21 @@ namespace CustomTabNames
 				return;
 			}
 
-			uint[] cookie = new uint[1] { VSConstants.VSCOOKIE_NIL };
+			// will store one cookie at a time, but Next() still requires an
+			// array
+			uint[] cookies = new uint[1] { VSConstants.VSCOOKIE_NIL };
+
 			enumerator.Reset();
 
 			while (true)
 			{
-				e = enumerator.Next(1, cookie, out var fetched);
+				e = enumerator.Next(1, cookies, out var fetched);
 
-				// done
 				if (e == VSConstants.S_FALSE || fetched != 1)
+				{
+					// done
 					break;
+				}
 
 				if (e != VSConstants.S_OK)
 				{
@@ -156,10 +163,16 @@ namespace CustomTabNames
 					break;
 				}
 
-				if (cookie[0] == VSConstants.VSCOOKIE_NIL)
-					continue;
 
-				var d = Utilities.DocumentFromCookie(cookie[0]);
+				var cookie = cookies[0];
+
+				if (cookie == VSConstants.VSCOOKIE_NIL)
+				{
+					// shouldn't happen
+					continue;
+				}
+
+				var d = Utilities.DocumentFromCookie(cookie);
 				if (d == null)
 					continue;
 
@@ -185,6 +198,7 @@ namespace CustomTabNames
 
 			Guid guid = Guid.Empty;
 
+			// getting enumerator
 			var e = Package.Instance.Solution.GetProjectEnum(
 				(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
 				ref guid, out var enumerator);
@@ -195,16 +209,21 @@ namespace CustomTabNames
 				return;
 			}
 
-			IVsHierarchy[] hierarchy = new IVsHierarchy[1] { null };
+			// will store one hierarchy at a time, but Next() still requires an
+			// array
+			IVsHierarchy[] hierarchies = new IVsHierarchy[1] { null };
+
 			enumerator.Reset();
 
 			while (true)
 			{
-				e = enumerator.Next(1, hierarchy, out var fetched);
+				e = enumerator.Next(1, hierarchies, out var fetched);
 
-				// done
 				if (e == VSConstants.S_FALSE || fetched != 1)
+				{
+					// done
 					break;
+				}
 
 				if (e != VSConstants.S_OK)
 				{
@@ -214,18 +233,35 @@ namespace CustomTabNames
 					break;
 				}
 
-				f(hierarchy[0]);
+
+				var h = hierarchies[0];
+
+				if (h == null)
+				{
+					// shouldn't happen
+					continue;
+				}
+
+				f(h);
 			}
 		}
 
+		// returns whether the current solution only has one project in it
+		//
 		public static bool HasSingleProject()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			try
 			{
-				Package.Instance.Solution.GetProperty(
+				var e = Package.Instance.Solution.GetProperty(
 					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
+
+				if (e != VSConstants.S_OK || !(o is int))
+				{
+					Logger.ErrorCode(e, "failed to get project count");
+					return false;
+				}
 
 				int i = (int)o;
 				return (i == 1);
@@ -237,15 +273,17 @@ namespace CustomTabNames
 			}
 		}
 
+		// returns whether the given document is in a builtin project
+		//
 		public static bool IsInBuiltinProject(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			var p = d?.ProjectItem?.ContainingProject;
-			if (p == null)
+			var k = d?.ProjectItem?.ContainingProject?.Kind;
+			if (k == null)
 				return false;
 
-			return BuiltinProjects.Contains(p.Kind);
+			return BuiltinProjects.Contains(k);
 		}
 
 		// either registers or unregisters the events
@@ -282,6 +320,22 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Trace("project count changed");
+
+			// this is fired from On*Before*CloseProject in EventHandlers, and
+			// so the project count hasn't been updated yet
+			//
+			// there is no On*After*CloseProject
+			//
+			// it's unclear what kind of delay there is between
+			// OnBeforeCloseProject and the actual update of the project count,
+			// but one second works for now
+			//
+			// in any case, the close can probably still be canceled by the
+			// user if there are unsaved changes, so this may be a false
+			// positive
+			//
+			// todo: try to find a way to get a callback to fire when the count
+			// actually changes instead of using a stupid timer
 
 			projectCountTimer.Start(1000, () =>
 			{
