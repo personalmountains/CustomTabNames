@@ -286,7 +286,7 @@ namespace CustomTabNames
 		// walks through all opened documents and tries to set the caption for
 		// each of them
 		//
-		private void FixAllDocuments()
+		public void FixAllDocuments()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("fixing all documents");

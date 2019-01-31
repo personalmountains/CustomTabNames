@@ -12,7 +12,8 @@ namespace CustomTabNames
 	//
 	public sealed class SolutionEventHandlers : SolutionEventHandlersBase
 	{
-		public event ProjectHandler ProjectAdded, ProjectRemoved, ProjectRenamed;
+		public event ProjectHandler ProjectAdded, ProjectRemoved;
+		public event ProjectHandler ProjectRenamed;
 		public event FolderHandler FolderRenamed;
 		public event DocumentHandler DocumentRenamed;
 

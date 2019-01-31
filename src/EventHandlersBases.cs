@@ -18,33 +18,33 @@ namespace CustomTabNames
 //      when an action fires more than one event, the one in brackets
 //      is ignored
 //
-// +---------+------------------------------+----------------------------------+
-// |         | C++                          | C#                               |
-// +---------+------------------------------+----------------------------------+
-// | add     | S.OnAfterOpenProject         | S.OnAfterOpenProject             |
-// | project |                              |                                  |
-// +---------+------------------------------+----------------------------------+
-// | remove  | S.OnBeforeCloseProject       | S.OnBeforeCloseProject           |
-// | project |                              |                                  |
-// +---------+------------------------------+----------------------------------+
-// | rename  | H.OnPropertyChanged          | H.OnPropertyChanged              |
-// | project |                              | (D.OnAfterAttributeChangeEx)     |
-// +---------+------------------------------+----------------------------------+
-// | rename  | H.OnPropertyChanged          | H.OnItemAdded                    |
-// | folder  |                              |                                  |
-// +---------+------------------------------+----------------------------------+
-// | move    | H.OnItemAdded                | H.OnItemAdded                    |
-// | folder  |                              |                                  |
-// +---------+------------------------------+----------------------------------+
-// | rename  | D.OnAfterAttributeChangeEx   | D.OnAfterAttributeChangeEx       |
-// | file    | (H.OnPropertyChanged x3)     | (H.OnItemAdded)                  |
-// +---------+------------------------------+----------------------------------+
-// | move    | H.OnItemAdded                | D.OnAfterAttributeChangeEx       |
-// | file    |                              | (H.OnItemAdded)                  |
-// +---------+------------------------------+----------------------------------+
-// | open    | D.OnBeforeDocumentWindowShow | D.OnBeforeDocumentWindowShow     |
-// | file    |                              |                                  |
-// +---------+------------------------------+----------------------------------+
+// +----------+------------------------------+--------------------------------+
+// |          | C++                          | C#                             |
+// +----------+------------------------------+--------------------------------+
+// | add      | S.OnAfterOpenProject         | S.OnAfterOpenProject           |
+// | project  |                              |                                |
+// +----------+------------------------------+--------------------------------+
+// | remove   | S.OnBeforeCloseProject       | S.OnBeforeCloseProject         |
+// | project  |                              |                                |
+// +----------+------------------------------+--------------------------------+
+// | rename   | H.OnPropertyChanged          | H.OnPropertyChanged            |
+// | project  |                              | (D.OnAfterAttributeChangeEx)   |
+// +----------+------------------------------+--------------------------------+
+// | rename   | H.OnPropertyChanged          | H.OnItemAdded                  |
+// | folder   |                              |                                |
+// +----------+------------------------------+--------------------------------+
+// | move     | H.OnItemAdded                | H.OnItemAdded                  |
+// | folder   |                              |                                |
+// +----------+------------------------------+--------------------------------+
+// | rename   | D.OnAfterAttributeChangeEx   | D.OnAfterAttributeChangeEx     |
+// | file     | (H.OnPropertyChanged x3)     | (H.OnItemAdded)                |
+// +----------+------------------------------+--------------------------------+
+// | move     | H.OnItemAdded                | D.OnAfterAttributeChangeEx     |
+// | file     |                              | (H.OnItemAdded)                |
+// +----------+------------------------------+--------------------------------+
+// | open     | D.OnBeforeDocumentWindowShow | D.OnBeforeDocumentWindowShow   |
+// | file     |                              |                                |
+// +----------+------------------------------+--------------------------------+
 //
 // todo: there seems to be a bug where the first folder move in a C# project
 // doesn't trigger _any_ handlers at all, no idea how to fix that
@@ -64,6 +64,7 @@ namespace CustomTabNames
 		public delegate void FolderHandler(IVsHierarchy h, uint item);
 		public delegate void DocumentHandler(Document d, IVsWindowFrame wf);
 	}
+
 
 	public abstract class HierarchyEventHandlersBase :
 		EventHandlersBase, IVsHierarchyEvents
@@ -94,6 +95,7 @@ namespace CustomTabNames
 		public abstract int OnPropertyChanged(
 			uint itemid, int propid, uint flags);
 	}
+
 
 	public abstract class SolutionEventHandlersBase :
 		EventHandlersBase,

@@ -115,12 +115,32 @@ namespace CustomTabNames
 				if (cookie == VSConstants.VSCOOKIE_NIL)
 				{
 					// shouldn't happen
+					Logger.Trace("  . nil cookie");
+					continue;
+				}
+
+				var flags = Package.Instance.RDT4.GetDocumentFlags(cookie);
+				const uint Pending = (uint)_VSRDTFLAGS4.RDT_PendingInitialization;
+
+				if ((flags & Pending) != 0)
+				{
+					// document not initialized yet, skip it
+					Logger.Trace("  . {0} pending", cookie);
 					continue;
 				}
 
 				var d = Utilities.DocumentFromCookie(cookie);
 				if (d == null)
+				{
+					var mk = Package.Instance.RDT4.GetDocumentMoniker(cookie);
+					Logger.Trace("  . {0} no document ({1})", cookie, mk);
+
+					// GetRunningDocumentsEnum() enumerates all sorts of stuff
+					// that are not documents, like the project files, even the
+					// .sln file; all of those return null here, so they can
+					// be safely ignored
 					continue;
+				}
 
 				var wf = Utilities.WindowFrameFromDocument(d);
 				if (wf == null)
@@ -128,11 +148,14 @@ namespace CustomTabNames
 					// this seems to happen for documents that haven't loaded
 					// yet, they should get picked up by
 					// DocumentEventHandlers.OnBeforeDocumentWindowShow later
-					Logger.Log(
-						"ForEachDocument: skipping {0}, no frame", d.FullName);
+					Logger.Trace(
+						"  . {0} no frame ({1})", cookie, d.FullName);
 
 					continue;
 				}
+
+				Logger.Trace(
+					"  . {0} ok ({1})", cookie, d.FullName);
 
 				f(new DocumentWrapper(d, wf));
 			}

@@ -89,12 +89,15 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// project events
 			solHandlers.ProjectAdded += OnProjectAdded;
 			solHandlers.ProjectRemoved += OnProjectRemoved;
 			solHandlers.ProjectRenamed += OnProjectRenamed;
 
+			// folder events
 			solHandlers.FolderRenamed += OnFolderRenamed;
 
+			// document events
 			solHandlers.DocumentRenamed += OnDocumentRenamed;
 			docHandlers.DocumentRenamed += OnDocumentRenamed;
 			docHandlers.DocumentOpened += OnDocumentOpened;
