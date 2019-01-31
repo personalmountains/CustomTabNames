@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio;
+﻿using EnvDTE;
+using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 
@@ -61,11 +62,7 @@ namespace CustomTabNames
 	{
 		public delegate void ProjectHandler(IVsHierarchy h);
 		public delegate void FolderHandler(IVsHierarchy h, uint item);
-		public delegate void DocumentHandler(IVsHierarchy h, uint item);
-
-		//public event ProjectHandler ProjectAdded, ProjectRemoved, ProjectRenamed;
-		//public event FolderHandler FolderRenamed, FolderMoved;
-		//public event DocumentHandler DocumentRenamed, DocumentMoved;
+		public delegate void DocumentHandler(Document d, IVsWindowFrame wf);
 	}
 
 	public abstract class HierarchyEventHandlersBase :

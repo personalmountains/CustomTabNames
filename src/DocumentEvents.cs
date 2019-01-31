@@ -85,13 +85,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
-			{
-				Error("OnBeforeDocumentWindowShow: can't get item id");
-				return VSConstants.S_OK;
-			}
-
-			DocumentOpened?.Invoke(h, id);
+			DocumentOpened?.Invoke(d, wf);
 
 			return VSConstants.S_OK;
 		}
@@ -130,20 +124,22 @@ namespace CustomTabNames
 				"oldId={2} oldPath={3} newId={4} newPath={5}",
 				cookie, atts, oldId, oldPath, newId, newPath);
 
-			if (!Utilities.ItemIDFromCookie(cookie, out var h, out var id))
-			{
-				Error("can't get hierarchy for cookie {0}", cookie);
-				return VSConstants.S_OK;
-			}
-
-			if (Utilities.DocumentFromCookie(cookie) == null)
+			var d = Utilities.DocumentFromCookie(cookie);
+			if (d == null)
 			{
 				// this happens when renaming a C# project, which is handled
 				// elsewhere, so that's fine
 				return VSConstants.S_OK;
 			}
 
-			DocumentRenamed?.Invoke(h, id);
+			var wf = Utilities.WindowFrameFromDocument(d);
+			if (wf == null)
+			{
+				Error("OnAfterAttributeChangeEx rename: no window frame");
+				return VSConstants.S_OK;
+			}
+
+			DocumentRenamed?.Invoke(d, wf);
 
 			return VSConstants.S_OK;
 		}

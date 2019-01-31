@@ -104,7 +104,8 @@ namespace CustomTabNames
 			}
 			else
 			{
-				if (Utilities.DocumentFromItemID(Hierarchy, item) == null)
+				var d = Utilities.DocumentFromItemID(Hierarchy, item);
+				if (d == null)
 				{
 					// this happens when renaming C# files for whatever reason,
 					// but it's fine because it's already handled in
@@ -112,7 +113,14 @@ namespace CustomTabNames
 					return VSConstants.S_OK;
 				}
 
-				DocumentRenamed?.Invoke(Hierarchy, item);
+				var wf = Utilities.WindowFrameFromDocument(d);
+				if (wf == null)
+				{
+					Error("OnItemAdded: no window frame");
+					return VSConstants.S_OK;
+				}
+
+				DocumentRenamed?.Invoke(d, wf);
 			}
 
 			return VSConstants.S_OK;

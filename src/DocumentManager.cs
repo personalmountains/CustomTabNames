@@ -134,11 +134,11 @@ namespace CustomTabNames
 			}
 		}
 
+
 		private void OnProjectAdded(IVsHierarchy h)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("project {0} added", Utilities.DebugHierarchyName(h));
-
 			ContainersChanged?.Invoke();
 		}
 
@@ -146,7 +146,6 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("project {0} removed", Utilities.DebugHierarchyName(h));
-
 			ContainersChanged?.Invoke();
 		}
 
@@ -154,7 +153,6 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("project {0} renamed", Utilities.DebugHierarchyName(h));
-
 			ContainersChanged?.Invoke();
 		}
 
@@ -162,50 +160,20 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("folder {0} renamed", Utilities.DebugHierarchyName(h, item));
-
 			ContainersChanged?.Invoke();
 		}
 
-		private void OnDocumentRenamed(IVsHierarchy h, uint item)
+		private void OnDocumentRenamed(Document d, IVsWindowFrame wf)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("document {0} renamed", Utilities.DebugHierarchyName(h, item));
-			OnDocumentChanged(h, item);
+			Trace("document {0} renamed", d.FullName);
+			DocumentChanged?.Invoke(new DocumentWrapper(d, wf));
 		}
 
-		private void OnDocumentOpened(IVsHierarchy h, uint item)
+		private void OnDocumentOpened(Document d, IVsWindowFrame wf)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("document {0} opened", Utilities.DebugHierarchyName(h, item));
-			OnDocumentChanged(h, item);
-		}
-
-		// handles both renamed and opened
-		//
-		private void OnDocumentChanged(IVsHierarchy h, uint item)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var d = Utilities.DocumentFromItemID(h, item);
-			if (d == null)
-			{
-				Error(
-					"document {0} has no document object",
-					Utilities.DebugHierarchyName(h, item));
-
-				return;
-			}
-
-			var wf = Utilities.WindowFrameFromDocument(d);
-			if (wf == null)
-			{
-				Error(
-					"document {0} has no frame",
-					Utilities.DebugHierarchyName(h, item));
-
-				return;
-			}
-
+			Trace("document {0} opened", d.FullName);
 			DocumentChanged?.Invoke(new DocumentWrapper(d, wf));
 		}
 	}
