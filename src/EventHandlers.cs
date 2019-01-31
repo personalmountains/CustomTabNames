@@ -6,74 +6,128 @@ using System.Collections.Generic;
 
 namespace CustomTabNames
 {
-	class HierarchyEventHandlers : IVsHierarchyEvents
+	// hierarchy events are fired when items in the solution explorer change;
+	// this is used to update captions when filters are renamed, items are moved
+	// between filters, projects are renamed, etc.
+	//
+	// while the solution and document events are global, the hierarchy events
+	// must be registered per project; this is done in two places in
+	// SolutionEventHandlers: when projects are opened and closed, and in
+	// Register()
+	//
+	class HierarchyEventHandlers : LoggingContext, IVsHierarchyEvents
 	{
+		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
 
+		// fired when documents are moved between filters
 		public delegate void DocumentMovedHandler(DocumentWrapper d);
 		public event DocumentMovedHandler DocumentMoved;
 
+		// fired when filters or projects are renamed
 		public delegate void ContainerNameChangedHandler();
 		public event ContainerNameChangedHandler ContainerNameChanged;
 
+		// the project this handler has been registered for
 		public IVsHierarchy Hierarchy { get; private set; }
+
 
 		public HierarchyEventHandlers(IVsHierarchy h)
 		{
 			Hierarchy = h;
 		}
 
+		protected override string LogPrefix()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			return
+				"HierarchyEventHandlers for " +
+				Utilities.DebugHierarchyName(Hierarchy);
+		}
+
+		// registers for events on the project
+		//
 		public void Register()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("advising");
 
-			Logger.Trace("registering for hierarchy events");
-			Hierarchy.AdviseHierarchyEvents(this, out cookie);
+			var e = Hierarchy.AdviseHierarchyEvents(this, out cookie);
+
+			if (e != VSConstants.S_OK)
+			{
+				// just in case
+				cookie = VSConstants.VSCOOKIE_NIL;
+				ErrorCode(e, "AdviseHierarchyEvents() failed");
+			}
 		}
 
+		// unregisters for events on the project
+		//
 		public void Unregister()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("unregistering from hierarchy events");
+			Trace("unadvising");
 
 			if (cookie == VSConstants.VSCOOKIE_NIL)
-				Logger.Error("cookie is nil");
-			else
-				Hierarchy.UnadviseHierarchyEvents(cookie);
+			{
+				Error("cookie is nil");
+				return;
+			}
+
+			var e = Hierarchy.UnadviseHierarchyEvents(cookie);
+
+			if (e != VSConstants.S_OK)
+				ErrorCode(e, "failed to unadvise");
 		}
 
 
-		public int OnItemAdded(uint itemidParent, uint itemidSiblingPrev, uint itemidAdded)
+		public int OnItemAdded(uint parent, uint prevSibling, uint item)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+
+			Trace(
+				"OnItemAdded: parent={0} prevSibling={1} item={2}",
+				parent, prevSibling, item);
 
 			// there's no real way of knowing whether this is called because
 			// an item is moved (delete+add) or a new item is added to the
 			// project
 			//
-			// itemidSiblingPrev looks promising: it's usually Nil for items
-			// that were just added, and not Nil for items that were moved
+			// it might be possible to handle OnItemDeleted and remember the
+			// itemid to see if it's the same here (it seems to be), but that
+			// sounds error-prone (what if it's actually a new item that reused
+			// an old id at the same time?) and a PITA (I need to keep a list
+			// of items in sync, purge it regularly for items that were actually
+			// deleted, etc.)
 			//
-			// but there seems to be a few cases where items are moved and
-			// itemidSiblingPrev is still Nil
+			// however, prevSibling looks promising: it's usually Nil for items
+			// that were just added, and not Nil for items that were moved, but
+			// there seems to be a few cases where items are moved and
+			// prevSibling is still Nil, so it's not full-proof
 			//
 			// therefore, adding a file might fire twice: once here, and once
 			// in the document events below
 
-			var d = Utilities.DocumentFromItemID(Hierarchy, itemidAdded);
+			var d = Utilities.DocumentFromItemID(Hierarchy, item);
 			if (d == null)
 			{
-				// the item was moved, but the document probably isn't opened
+				// this happens when what's being moved is not a document
+				// todo: this is wrong, filters can be moved too, and captions
+				// need fixing
+				//
+				// this also happens when renaming c# files if they're opened,
+				// who knows why
 				return VSConstants.S_OK;
 			}
 
 			var wf = Utilities.WindowFrameFromDocument(d);
 			if (wf == null)
 			{
-				Logger.Error(
-					"OnItemAdded: can't get window frame from document {0}",
-					d.FullName);
-
+				// this happens when an item was moved in the hierarchy without
+				// being opened
+				Error("OnItemAdded: document {0} has no frame", d.FullName);
 				return VSConstants.S_OK;
 			}
 
@@ -82,19 +136,26 @@ namespace CustomTabNames
 			return VSConstants.S_OK;
 		}
 
-		public int OnPropertyChanged(uint itemid, int propid, uint flags)
+		// fired when properties on an item change, like renaming
+		//
+		public int OnPropertyChanged(uint item, int prop, uint flags)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			if (propid != (int)__VSHPROPID.VSHPROPID_Caption)
+			if (prop != (int)__VSHPROPID.VSHPROPID_Caption)
+			{
+				// ignore everything but changing the caption
 				return VSConstants.S_OK;
+			}
 
-			Logger.Trace("OnPropertyChanged caption on {0}", itemid);
+			Trace(
+				"OnPropertyChanged caption: item={0} prop={1} flags={2}",
+				item, prop, flags);
 
-			// this catches both renaming projects and files;
+			// this catches both renaming projects and files
 			// todo: this could perhaps be more efficient by only fixing
-			//       documents that are under this filter (if it's a filter)
-			//
+			// documents that are under this filter (if it's a filter)
+
 			ContainerNameChanged?.Invoke();
 
 			return VSConstants.S_OK;
@@ -123,154 +184,234 @@ namespace CustomTabNames
 	}
 
 
+	// handles solution events, like adding, renaming and removing projects
+	//
+	// note most of these events are only fired when a corresponding change is
+	// made to files *on disk* (rename, move, etc.), which happens for C#
+	// projects, but not C++ projects
+	//
+	// for example, when a C# project is renamed, its .csproj is also renamed
+	// automatically and this fires the handler
+	//
+	// when a C++ project is renamed, the content of its .vcxproj is changed,
+	// but it is _not_ renamed, and so these handlers don't fire; these events
+	// are instead handled by the hierarchy handlers above, which fire on
+	// renaming tree item captions
+	//
+	// todo: are both necessary? isn't the hierarchy event enough for both?
+	//
 	public sealed class SolutionEventHandlers :
+		LoggingContext,
 		IVsSolutionEvents, IVsSolutionEvents2,
 		IVsSolutionEvents3, IVsSolutionEvents4
 	{
+		// fired when projects were added or removed
 		public delegate void ProjectCountChangedHandler();
 		public event ProjectCountChangedHandler ProjectCountChanged;
 
+		// fired when a document was moved in the tree
 		public delegate void DocumentMovedHandler(DocumentWrapper d);
 		public event DocumentMovedHandler DocumentMoved;
 
+		// fired when a project was renamed
 		public delegate void ContainerNameChangedHandler();
 		public event ContainerNameChangedHandler ContainerNameChanged;
 
+		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
 
+		// hierarchy handlers are per-project, this remembers them
 		private readonly Dictionary<string, HierarchyEventHandlers>
 			hierarchyHandlers =
 				new Dictionary<string, HierarchyEventHandlers>();
 
+
+		protected override string LogPrefix()
+		{
+			return "SolutionEventHandlers";
+		}
+
+		// register for solution events and walks all current projects to
+		// register for their own hierarchy events: this is necessary because
+		// the extension might initialize _after_ projects are loaded, and
+		// therefore won't receive the corresponding events
+		//
 		public void Register()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("registering for solution events");
+			Trace("registering for events");
 
-			Package.Instance.Solution.AdviseSolutionEvents(this, out cookie);
+			var e = Package.Instance.Solution
+				.AdviseSolutionEvents(this, out cookie);
 
+			if (e != VSConstants.S_OK)
+			{
+				ErrorCode(e, "AdviseSolutionEvents() failed");
+
+				// don't bother with the rest, there's a major problem
+				return;
+			}
+
+			// go through every loaded project and register for hierarchy
+			// events; this handles cases where the extension was loaded after
+			// the current solution
 			DocumentManager.ForEachProjectHierarchy((h) =>
 			{
 				AddProjectHierarchy(h);
 			});
 		}
 
+		// unregisters from solution events
+		//
 		public void Unregister()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// unregister all per-project handlers
 			foreach (var hh in hierarchyHandlers)
 				hh.Value.Unregister();
 
 			hierarchyHandlers.Clear();
 
-			Logger.Trace("unregistering from solution events");
+			Trace("unregistering from events");
 
 			if (cookie == VSConstants.VSCOOKIE_NIL)
-				Logger.Error("cookie is nil");
-			else
-				Package.Instance.Solution.UnadviseSolutionEvents(cookie);
+			{
+				Error("cookie is nil");
+				return;
+			}
+
+			var e = Package.Instance.Solution.UnadviseSolutionEvents(cookie);
+			if (e != VSConstants.S_OK)
+				ErrorCode(e, "UnadviseSolutionEvents() failed");
 		}
 
 
+		// fired once per project in the current solution
+		//
 		public int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("OnAfterOpenProject");
+			Trace("OnAfterOpenProject");
 
+			// register for hierarchy events for this project and add it to the
+			// list
 			AddProjectHierarchy(hierarchy);
+
 			ProjectCountChanged?.Invoke();
 
 			return VSConstants.S_OK;
 		}
 
+		// fired just _before_ a project is removed from the solution; there
+		// is no corresponding OnAfterCloseProject, which is unfortunate, see
+		// DocumentManager.OnProjectCountChanged()
+		//
 		public int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("OnBeforeCloseProject");
+			Trace("OnBeforeCloseProject");
 
+			// unregister for hierarchy events and remove it from the list
 			RemoveProjectHierarchy(hierarchy);
-			ProjectCountChanged?.Invoke();
 
+			ProjectCountChanged?.Invoke();
 			return VSConstants.S_OK;
 		}
 
+		// fired after a project is renamed on disk
+		//
 		public int OnAfterRenameProject(IVsHierarchy hierarchy)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("OnAfterRenameProject");
-			ProjectCountChanged?.Invoke();
+			Trace("OnAfterRenameProject");
+
+			ContainerNameChanged?.Invoke();
 			return VSConstants.S_OK;
 		}
 
+		// fired after a document is moved on disk
+		//
 		private void OnDocumentMoved(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			DocumentMoved?.Invoke(d);
 		}
 
+		// fired by the HierarchyEventHandlers (per-project) when a filter or
+		// the project itself was renamed
+		//
 		private void OnContainerNameChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			ContainerNameChanged?.Invoke();
 		}
 
+		// called once per project, registers for project hierarchy events and
+		// adds the handler to the list
+		//
 		private void AddProjectHierarchy(IVsHierarchy h)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// the canonical name of a project hierarchy object is unique, so
+			// it is used as a key in the dictionary
 			var e = h.GetCanonicalName(
 				(uint)VSConstants.VSITEMID.Root, out var cn);
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.ErrorCode(e, "GetCanonicalName() on hierarchy failed");
+				ErrorCode(e, "AddProjectHierarchy: GetCanonicalName failed");
 				return;
 			}
 
-			Logger.Log("adding hierarchy {0} to list", cn);
+			Log("AddProjectHierarchy: adding {0} to list", cn);
 
 			if (hierarchyHandlers.ContainsKey(cn))
 			{
-				Logger.Warn("hierarchy list already contains {0}", cn);
+				Error("AddProjectHierarchy: list already contains {0}", cn);
+				return;
 			}
-			else
-			{
-				var hh = new HierarchyEventHandlers(h);
-				hh.Register();
 
-				hh.DocumentMoved += OnDocumentMoved;
-				hh.ContainerNameChanged += OnContainerNameChanged;
+			var hh = new HierarchyEventHandlers(h);
 
-				hierarchyHandlers.Add(cn, hh);
-			}
+			// registers for hierarchy events on this project
+			hh.Register();
+
+			hh.DocumentMoved += OnDocumentMoved;
+			hh.ContainerNameChanged += OnContainerNameChanged;
+
+			hierarchyHandlers.Add(cn, hh);
 		}
 
 		private void RemoveProjectHierarchy(IVsHierarchy h)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
+			// the canonical name of a project hierarchy object is unique, so
+			// it is used as a key in the dictionary
 			var e = h.GetCanonicalName(
 				(uint)VSConstants.VSITEMID.Root, out var cn);
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.ErrorCode(e, "GetCanonicalName() on hierarchy failed");
+				ErrorCode(e, "RemoveProjectHierarchy: GetCanonicalName failed");
 				return;
 			}
 
-			hierarchyHandlers.TryGetValue(cn, out var hh);
+			Log("RemoveProjectHierarchy: removing {0} from list", cn);
 
+			hierarchyHandlers.TryGetValue(cn, out var hh);
 			if (hh == null)
 			{
-				Logger.Log("hierarchy {0} not found in handlers", cn);
+				Error("RemoveProjectHierarchy: {0} not in list", cn);
+				return;
 			}
-			else
-			{
-				Logger.Log("removing hierarchy {0} from list", cn);
-				hh.Unregister();
-				hierarchyHandlers.Remove(cn);
-			}
+
+			// unregistering from events
+			hh.Unregister();
+
+			hierarchyHandlers.Remove(cn);
 		}
 
 		public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
@@ -360,39 +501,75 @@ namespace CustomTabNames
 	}
 
 
+	// handles document events, like opening and renaming; these are also called
+	// for project events, but they're ignored because they're ignored in the
+	// solution or hierarchy events above
+	//
+	// some of these events only fire when a change is made in filenames on
+	// disk, see SolutionEventHandlers class above
+	//
 	public sealed class DocumentEventHandlers :
+		LoggingContext,
 		IVsRunningDocTableEvents, IVsRunningDocTableEvents2,
 		IVsRunningDocTableEvents3, IVsRunningDocTableEvents4
 	{
-		public delegate void DocumentOpenedHandler(DocumentWrapper d);
-		public event DocumentOpenedHandler DocumentOpened, DocumentRenamed;
+		public delegate void DocumentHandler(DocumentWrapper d);
 
+		// fired when a document is opened
+		public event DocumentHandler DocumentOpened;
+
+		// fired when a document is renamed
+		public event DocumentHandler DocumentRenamed;
+
+		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
 
+
+		protected override string LogPrefix()
+		{
+			return "DocumentEventHandlers";
+		}
+
+
+		// registers for events
+		//
 		public void Register()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			Logger.Trace("registering for document events");
-			Package.Instance.RDT.AdviseRunningDocTableEvents(this, out cookie);
+			Trace("registering for events");
+
+			var e = Package.Instance.RDT
+				.AdviseRunningDocTableEvents(this, out cookie);
+
+			if (e != VSConstants.S_OK)
+				ErrorCode(e, "AdviseRunningDocTableEvents failed");
 		}
 
+		// unregisters from events
+		//
 		public void Unregister()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			Logger.Trace("unregistering from document events");
+			Trace("unregistering from document events");
 
 			if (cookie == VSConstants.VSCOOKIE_NIL)
 			{
-				Logger.Error("cookie is nil");
+				Error("cookie is nil");
 				return;
 			}
 
-			Package.Instance.RDT.UnadviseRunningDocTableEvents(cookie);
+			var e = Package.Instance.RDT.UnadviseRunningDocTableEvents(cookie);
+
+			if (e != VSConstants.S_OK)
+				ErrorCode(e, "UnadviseRunningDocTableEvents failed");
 		}
 
 
+		// fired when a document is about to be shown on screen for various
+		// reasons
+		//
 		public int OnBeforeDocumentWindowShow(
 			uint itemCookie, int first, IVsWindowFrame wf)
 		{
@@ -410,29 +587,31 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-
 			var d = Utilities.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{
-				Logger.Error(
-					"OnBeforeDocumentWindowShow, " +
-					"couldn't get document from window object");
-
+				// this shouldn't happen
+				Error("OnBeforeDocumentWindowShow: frame has no document");
 				return VSConstants.S_OK;
 			}
 
-			Logger.Trace("OnBeforeDocumentWindowShow {0}", d.Name);
-			DocumentOpened?.Invoke(new DocumentWrapper(d, wf));
+			Trace("OnBeforeDocumentWindowShow for {0}", d.Name);
 
+			DocumentOpened?.Invoke(new DocumentWrapper(d, wf));
 			return VSConstants.S_OK;
 		}
 
+		// fired when document attributes change, such as renaming, but also
+		// dirty state, etc.
+		//
 		public int OnAfterAttributeChangeEx(
-				uint itemCookie, uint atts,
+				uint cookie, uint atts,
 				IVsHierarchy oldHier, uint oldId, string oldPath,
 				IVsHierarchy newHier, uint newId, string newPath)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
+
+			// note that this is also called when renaming projects
 
 			const uint RenameBit = (uint)__VSRDTATTRIB.RDTA_MkDocument;
 
@@ -442,38 +621,30 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			Logger.Trace(
-				"OnAfterAttributeChangeEx renamed {0} to {1} ({2})",
-				oldPath, newPath, atts);
+			Trace(
+				"OnAfterAttributeChangeEx rename: cookie={0} atts={1} " +
+				"oldId={2} oldPath={3} newId={4} newPath={5}",
+				cookie, atts, oldId, oldPath, newId, newPath);
 
-			var f = Utilities.WindowFrameFromPath(newPath);
-			if (f == null)
-			{
-				// this seems to happen when renaming projects, not sure why
-				return VSConstants.S_OK;
-			}
-
-			var w = VsShellUtilities.GetWindowObject(f);
-			if (w == null)
-			{
-				Logger.Error(
-					"OnAfterAttributeChangeEx can't get " +
-					"window object from frame");
-
-				return VSConstants.S_OK;
-			}
-
-			var d = w.Document;
+			var d = Utilities.DocumentFromCookie(cookie);
 			if (d == null)
 			{
-				Logger.Error(
-					"OnAfterAttributeChangeEx can't get document " +
-					"from window object");
+				// this happens when a project was renamed, ignore it because
+				// it will also fire a hierarchy event
+				return VSConstants.S_OK;
+			}
+
+			var wf = Utilities.WindowFrameFromDocument(d);
+			if (wf == null)
+			{
+				Error(
+					"OnAfterAttributeChangeEx: frame not found for {0}",
+					d.FullName);
 
 				return VSConstants.S_OK;
 			}
 
-			DocumentRenamed?.Invoke(new DocumentWrapper(d, f));
+			DocumentRenamed?.Invoke(new DocumentWrapper(d, wf));
 
 			return VSConstants.S_OK;
 		}

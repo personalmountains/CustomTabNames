@@ -246,5 +246,46 @@ namespace CustomTabNames
 
 			return false;
 		}
+
+		// used for logging
+		//
+		public static string DebugHierarchyName(IVsHierarchy h)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (h == null)
+				return "(null hierarchy)";
+
+			var e = h.GetCanonicalName(
+				(uint)VSConstants.VSITEMID.Root, out var cn);
+
+			if (e == VSConstants.S_OK)
+			{
+				if (cn is string s)
+				{
+					if (s.Length > 0)
+						return s;
+				}
+			}
+
+			// failed, try the name property
+
+			e = h.GetProperty(
+				(uint)VSConstants.VSITEMID.Root,
+				(int)__VSHPROPID.VSHPROPID_Name,
+				out var no);
+
+			if (e == VSConstants.S_OK)
+			{
+				if (no is string s)
+				{
+					if (s.Length > 0)
+						return s;
+				}
+			}
+
+			// whatever
+			return "?";
+		}
 	}
 }

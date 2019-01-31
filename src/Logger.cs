@@ -81,7 +81,7 @@ namespace CustomTabNames
 			pane.OutputString(SafeFormat(format, args) + "\n");
 		}
 
-		private static string SafeFormat(string format, object[] args)
+		public static string SafeFormat(string format, object[] args)
 		{
 			try
 			{
@@ -126,6 +126,57 @@ namespace CustomTabNames
 				return false;
 
 			return true;
+		}
+	}
+
+
+	public abstract class LoggingContext
+	{
+		public LoggingContext()
+		{
+		}
+
+		protected abstract string LogPrefix();
+
+		public void Error(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Error("{0}", MakeString(format, args));
+		}
+
+		public void ErrorCode(int e, string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.ErrorCode(e, "{0}", MakeString(format, args));
+		}
+
+		public void Warn(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Warn("{0}", MakeString(format, args));
+		}
+
+		public void Log(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Log("{0}", MakeString(format, args));
+		}
+
+		public void Trace(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Logger.Trace("{0}", MakeString(format, args));
+		}
+
+		private string MakeString(string format, object[] args)
+		{
+			var s = LogPrefix();
+			if (s.Length > 0)
+				s += ": ";
+
+			s += Logger.SafeFormat(format, args);
+
+			return s;
 		}
 	}
 }
