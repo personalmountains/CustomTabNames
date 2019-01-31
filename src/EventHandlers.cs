@@ -4,6 +4,22 @@ using Microsoft.VisualStudio.Shell.Interop;
 using System;
 using System.Collections.Generic;
 
+// these are the events that seem to be fired for various components:
+//
+//                  C++                            C#
+// add project      Sol.OnAfterOpenProject         same
+// remove project   Sol.OnBeforeCloseProject       same
+// rename project   Hier.OnPropertyChanged         Hier.OnPropertyChanged
+//                                                 Doc.OnAfterAttributeChangeEx
+//                                                 Sol.OnAfterRenameProject
+//
+// rename folder    Hier.OnPropertyChanged         Hier.OnItemAdded
+// move folder      Hier.OnItemAdded               same
+//
+// rename file      Hier.OnPropertyChanged x3      Hier.OnItemAdded
+//                  Doc.OnAfterAttributeChangeEx
+// move file        Hier.OnItemAdded               same
+
 namespace CustomTabNames
 {
 	// hierarchy events are fired when items in the solution explorer change;
@@ -15,7 +31,7 @@ namespace CustomTabNames
 	// SolutionEventHandlers: when projects are opened and closed, and in
 	// Register()
 	//
-	class HierarchyEventHandlers : LoggingContext, IVsHierarchyEvents
+	class HierarchyEventHandlers : HierarchyEventHandlersBase
 	{
 		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
@@ -83,7 +99,8 @@ namespace CustomTabNames
 		}
 
 
-		public int OnItemAdded(uint parent, uint prevSibling, uint item)
+		public override int OnItemAdded(
+			uint parent, uint prevSibling, uint item)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -153,9 +170,10 @@ namespace CustomTabNames
 			return VSConstants.S_OK;
 		}
 
-		// fired when properties on an item change, like renaming
+		// fired when properties on an item change, like renaming; this is
+		// called for C++ projects, folders and items, but only for C# projects
 		//
-		public int OnPropertyChanged(uint item, int prop, uint flags)
+		public override int OnPropertyChanged(uint item, int prop, uint flags)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -183,27 +201,6 @@ namespace CustomTabNames
 
 			ContainerNameChanged?.Invoke();
 
-			return VSConstants.S_OK;
-		}
-
-
-		public int OnInvalidateIcon(IntPtr hicon)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnInvalidateItems(uint itemidParent)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnItemDeleted(uint itemid)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnItemsAppended(uint itemidParent)
-		{
 			return VSConstants.S_OK;
 		}
 
@@ -259,10 +256,7 @@ namespace CustomTabNames
 	//
 	// todo: are both necessary? isn't the hierarchy event enough for both?
 	//
-	public sealed class SolutionEventHandlers :
-		LoggingContext,
-		IVsSolutionEvents, IVsSolutionEvents2,
-		IVsSolutionEvents3, IVsSolutionEvents4
+	public sealed class SolutionEventHandlers : SolutionEventHandlersBase
 	{
 		// fired when projects were added or removed
 		public delegate void ProjectCountChangedHandler();
@@ -348,7 +342,8 @@ namespace CustomTabNames
 
 		// fired once per project in the current solution
 		//
-		public int OnAfterOpenProject(IVsHierarchy hierarchy, int added)
+		public override int OnAfterOpenProject(
+			IVsHierarchy hierarchy, int added)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("OnAfterOpenProject");
@@ -366,7 +361,8 @@ namespace CustomTabNames
 		// is no corresponding OnAfterCloseProject, which is unfortunate, see
 		// DocumentManager.OnProjectCountChanged()
 		//
-		public int OnBeforeCloseProject(IVsHierarchy hierarchy, int removed)
+		public override int OnBeforeCloseProject(
+			IVsHierarchy hierarchy, int removed)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("OnBeforeCloseProject");
@@ -380,7 +376,7 @@ namespace CustomTabNames
 
 		// fired after a project is renamed on disk
 		//
-		public int OnAfterRenameProject(IVsHierarchy hierarchy)
+		public override int OnAfterRenameProject(IVsHierarchy hierarchy)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("OnAfterRenameProject");
@@ -472,91 +468,6 @@ namespace CustomTabNames
 
 			hierarchyHandlers.Remove(cn);
 		}
-
-		public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterCloseSolution(object pUnkReserved)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterClosingChildren(IVsHierarchy pHierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterLoadProject(
-			IVsHierarchy pStubHierarchy, IVsHierarchy pRealHierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterMergeSolution(object pUnkReserved)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterOpeningChildren(IVsHierarchy hierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeCloseSolution(object pUnkReserved)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeClosingChildren(IVsHierarchy hierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeOpeningChildren(IVsHierarchy hierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeUnloadProject(
-			IVsHierarchy realHierarchy, IVsHierarchy rtubHierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnQueryCloseProject(
-			IVsHierarchy hierarchy, int removing, ref int cancel)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnQueryCloseSolution(object pUnkReserved, ref int cancel)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnQueryUnloadProject(
-			IVsHierarchy pRealHierarchy, ref int cancel)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterAsynchOpenProject(IVsHierarchy hierarchy, int added)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterChangeProjectParent(IVsHierarchy hierarchy)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnQueryChangeProjectParent(
-			IVsHierarchy hierarchy, IVsHierarchy newParentHier, ref int cancel)
-		{
-			return VSConstants.S_OK;
-		}
 	}
 
 
@@ -567,10 +478,7 @@ namespace CustomTabNames
 	// some of these events only fire when a change is made in filenames on
 	// disk, see SolutionEventHandlers class above
 	//
-	public sealed class DocumentEventHandlers :
-		LoggingContext,
-		IVsRunningDocTableEvents, IVsRunningDocTableEvents2,
-		IVsRunningDocTableEvents3, IVsRunningDocTableEvents4
+	public sealed class DocumentEventHandlers : DocumentEventHandlersBase
 	{
 		public delegate void DocumentHandler(DocumentWrapper d);
 
@@ -629,7 +537,7 @@ namespace CustomTabNames
 		// fired when a document is about to be shown on screen for various
 		// reasons
 		//
-		public int OnBeforeDocumentWindowShow(
+		public override int OnBeforeDocumentWindowShow(
 			uint itemCookie, int first, IVsWindowFrame wf)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -663,7 +571,7 @@ namespace CustomTabNames
 		// fired when document attributes change, such as renaming, but also
 		// dirty state, etc.
 		//
-		public int OnAfterAttributeChangeEx(
+		public override int OnAfterAttributeChangeEx(
 				uint cookie, uint atts,
 				IVsHierarchy oldHier, uint oldId, string oldPath,
 				IVsHierarchy newHier, uint newId, string newPath)
@@ -705,59 +613,6 @@ namespace CustomTabNames
 
 			DocumentRenamed?.Invoke(new DocumentWrapper(d, wf));
 
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterAttributeChange(uint docCookie, uint grfAttribs)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterDocumentWindowHide(
-			uint docCookie, IVsWindowFrame pFrame)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterFirstDocumentLock(
-			uint docCookie, uint dwRDTLockType,
-			uint dwReadLocksRemaining, uint dwEditLocksRemaining)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterSave(uint docCookie)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeLastDocumentUnlock(
-			uint docCookie, uint dwRDTLockType,
-			uint dwReadLocksRemaining, uint dwEditLocksRemaining)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeSave(uint docCookie)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterLastDocumentUnlock(
-			IVsHierarchy pHier, uint itemid,
-			string pszMkDocument, int fClosedWithoutSaving)
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnAfterSaveAll()
-		{
-			return VSConstants.S_OK;
-		}
-
-		public int OnBeforeFirstDocumentLock(
-			IVsHierarchy pHier, uint itemid, string pszMkDocument)
-		{
 			return VSConstants.S_OK;
 		}
 	}

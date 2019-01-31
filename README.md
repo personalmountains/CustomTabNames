@@ -40,13 +40,13 @@ If false, all tabs are restored to showing the filename. Defaults to `true`.
 Some items are under dummy projects. For example, opening a file that's not in the solution puts it under a project named "Miscellaneous files", which would appear with `$(ProjectName)`. When `true`, these dummy projects are ignored and `$(ProjectName)` will expand to an empty string. Defaults to `true`.
 
 #### Ignore single project
-Doesn't expand $(ProjectName) if there's only one project in the solution. Defaults to `true`.
+Doesn't expand `$(ProjectName)` if there's only one project in the solution. Defaults to `true`.
 
 #### Logging
-If true, a new entry 'CustomTabNames' is created in the Output window with logs from this extension. Defaults to `false`.
+If true, a new entry "CustomTabNames" is created in the Output window with logs from this extension. Defaults to `false`.
 
 #### LoggingLevel
-Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace 4=Variable expansions. Ignored if `Logging` is `false. Defaults to 2 (Log).
+Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace 4=Variable expansions. Ignored if `Logging` is `false`. Defaults to 2 (Log).
 
 #### Template
 The template string used to generate captions. Defaults to `$(ProjectName ':')$(FilterPath)$(Filename)`.
