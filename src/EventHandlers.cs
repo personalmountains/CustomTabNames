@@ -10,15 +10,27 @@ using System.Collections.Generic;
 // add project      Sol.OnAfterOpenProject         same
 // remove project   Sol.OnBeforeCloseProject       same
 // rename project   Hier.OnPropertyChanged         Hier.OnPropertyChanged
-//                                                 Doc.OnAfterAttributeChangeEx
-//                                                 Sol.OnAfterRenameProject
+//                  --                             Doc.OnAfterAttributeChangeEx
+//                  --                             Sol.OnAfterRenameProject
 //
 // rename folder    Hier.OnPropertyChanged         Hier.OnItemAdded
 // move folder      Hier.OnItemAdded               same
 //
 // rename file      Hier.OnPropertyChanged x3      Hier.OnItemAdded
-//                  Doc.OnAfterAttributeChangeEx
+//                  Doc.OnAfterAttributeChangeEx   same
+//                    (only when opened)
 // move file        Hier.OnItemAdded               same
+//                  --                             Doc.OnAfterAttributeChangeEx
+//                                                   (only when opened)
+// open file        OnBeforeDocumentWindowShow     same
+//
+//
+// there seems to be a bug where the first folder move in a C# project doesn't
+// trigger _any_ handlers at all, no idea how to fix that
+//
+// todo: renaming a C# folder triggers both a full update _and_ an
+// OnAfterAttributeChangeEx per file in that folder (and it's recursive!)
+
 
 namespace CustomTabNames
 {
@@ -33,16 +45,12 @@ namespace CustomTabNames
 	//
 	class HierarchyEventHandlers : HierarchyEventHandlersBase
 	{
+		public event ProjectHandler ProjectRenamed;
+		public event FolderHandler FolderRenamed;
+		public event DocumentHandler DocumentRenamed;
+
 		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
-
-		// fired when documents are moved between folders
-		public delegate void DocumentMovedHandler(DocumentWrapper d);
-		public event DocumentMovedHandler DocumentMoved;
-
-		// fired when folders or projects are renamed
-		public delegate void ContainerNameChangedHandler();
-		public event ContainerNameChangedHandler ContainerNameChanged;
 
 		// the project this handler has been registered for
 		public IVsHierarchy Hierarchy { get; private set; }
@@ -108,71 +116,41 @@ namespace CustomTabNames
 				"OnItemAdded: parent={0} prevSibling={1} item={2}",
 				parent, prevSibling, item);
 
-			// there's no real way of knowing whether this is called because
-			// an item is moved (delete+add) or a new item is added to the
-			// project
-			//
-			// it might be possible to handle OnItemDeleted and remember the
-			// itemid to see if it's the same here (it seems to be), but that
-			// sounds error-prone (what if it's actually a new item that reused
-			// an old id at the same time?) and a PITA (I need to keep a list
-			// of items in sync, purge it regularly for items that were actually
-			// deleted, etc.)
-			//
-			// however, prevSibling looks promising: it's usually Nil for items
-			// that were just added, and not Nil for items that were moved, but
-			// there seems to be a few cases where items are moved and
-			// prevSibling is still Nil, so it's not full-proof
-			//
-			// therefore, adding a file might fire twice: once here, and once
-			// in the document events below
+			// it's generally impossible to differentiate between moves and
+			// renames for either files or folders
 
-			var d = Utilities.DocumentFromItemID(Hierarchy, item);
-			if (d == null)
+			if (Utilities.ItemIsFolder(Hierarchy, item))
 			{
-				// this may be a folder or an unopened document
+				FolderRenamed?.Invoke(Hierarchy, item);
+			}
+			else
+			{
+				var d = Utilities.DocumentFromItemID(Hierarchy, item);
 
-				if (Utilities.ItemIsFolder(Hierarchy, item))
+				if (d == null)
 				{
-					if (ShouldFireForFolder(item))
-					{
-						// this is a non-empty folder that was moved
-						//
-						// todo: this could perhaps be more efficient by only
-						// fixing documents that are under this folder
-
-						ContainerNameChanged?.Invoke();
-					}
-
-					// this isn't a document, so don't bother with the rest
-
+					// this happens when renaming C# files, but it's fine
+					// because it's already handled in OnAfterAttributeChangeEx
 					return VSConstants.S_OK;
 				}
 
-				// this isn't a folder and it has no associated document, this
-				// happens for unopened documents, also when renaming c# files
-				// even if they're opened, who knows why
-				Trace("OnItemAdded: no document");
-				return VSConstants.S_OK;
-			}
+				var project = d.ProjectItem?.ContainingProject?.Kind;
+				const string csProject = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}";
 
-			var wf = Utilities.WindowFrameFromDocument(d);
-			if (wf == null)
-			{
-				// this sometimes happens when an item was moved in the
-				// hierarchy without being opened
-				Error("OnItemAdded: document {0} has no frame", d.FullName);
-				return VSConstants.S_OK;
-			}
+				if (project == csProject)
+				{
+					// don't fire for C# projects; the reverse is tempting, but it's
+					// better to have multiple events than none
+					return VSConstants.S_OK;
+				}
 
-			DocumentMoved?.Invoke(new DocumentWrapper(d, wf));
+
+				DocumentRenamed?.Invoke(Hierarchy, item);
+			}
 
 			return VSConstants.S_OK;
 		}
 
-		// fired when properties on an item change, like renaming; this is
-		// called for C++ projects, folders and items, but only for C# projects
-		//
 		public override int OnPropertyChanged(uint item, int prop, uint flags)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
@@ -187,88 +165,25 @@ namespace CustomTabNames
 				"OnPropertyChanged caption: item={0} prop={1} flags={2}",
 				item, prop, flags);
 
-			if (Utilities.ItemIsFolder(Hierarchy, item))
+			if (item == (uint)VSConstants.VSITEMID.Root)
 			{
-				// don't trigger a full update for empty folders
-
-				if (!ShouldFireForFolder(item))
-					return VSConstants.S_OK;
+				ProjectRenamed?.Invoke(Hierarchy);
 			}
-
-			// this catches both renaming projects and files
-			// todo: this could perhaps be more efficient by only fixing
-			// documents that are under this folder (if it's a folder)
-
-			ContainerNameChanged?.Invoke();
+			else if (Utilities.ItemIsFolder(Hierarchy, item))
+			{
+				FolderRenamed?.Invoke(Hierarchy, item);
+			}
 
 			return VSConstants.S_OK;
-		}
-
-		private bool ShouldFireForFolder(uint item)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			// todo: this doesn't handle a folder that contains other empty
-			// folders
-
-			var e = Hierarchy.GetProperty(
-				item, (int)__VSHPROPID.VSHPROPID_FirstChild,
-				out var childObject);
-
-			// careful: for whatever reason, FirstChild is an int instead
-			// of a uint
-
-			if (e != VSConstants.S_OK || !(childObject is int))
-			{
-				ErrorCode(
-					e, "OnPropertyChanged failed to get folder " +
-					"first child");
-			}
-			else
-			{
-				var child = (uint)(int)childObject;
-
-				if (child == (uint)VSConstants.VSITEMID.Nil)
-				{
-					Trace("this is a folder without children, ignoring");
-					return false;
-				}
-			}
-
-			return true;
 		}
 	}
 
 
-	// handles solution events, like adding, renaming and removing projects
-	//
-	// note most of these events are only fired when a corresponding change is
-	// made to files *on disk* (rename, move, etc.), which happens for C#
-	// projects, but not C++ projects
-	//
-	// for example, when a C# project is renamed, its .csproj is also renamed
-	// automatically and this fires the handler
-	//
-	// when a C++ project is renamed, the content of its .vcxproj is changed,
-	// but it is _not_ renamed, and so these handlers don't fire; these events
-	// are instead handled by the hierarchy handlers above, which fire on
-	// renaming tree item captions
-	//
-	// todo: are both necessary? isn't the hierarchy event enough for both?
-	//
 	public sealed class SolutionEventHandlers : SolutionEventHandlersBase
 	{
-		// fired when projects were added or removed
-		public delegate void ProjectCountChangedHandler();
-		public event ProjectCountChangedHandler ProjectCountChanged;
-
-		// fired when a document was moved in the tree
-		public delegate void DocumentMovedHandler(DocumentWrapper d);
-		public event DocumentMovedHandler DocumentMoved;
-
-		// fired when a project was renamed
-		public delegate void ContainerNameChangedHandler();
-		public event ContainerNameChangedHandler ContainerNameChanged;
+		public event ProjectHandler ProjectAdded, ProjectRemoved, ProjectRenamed;
+		public event FolderHandler FolderRenamed;
+		public event DocumentHandler DocumentRenamed;
 
 		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
@@ -277,6 +192,10 @@ namespace CustomTabNames
 		private readonly Dictionary<string, HierarchyEventHandlers>
 			hierarchyHandlers =
 				new Dictionary<string, HierarchyEventHandlers>();
+
+		// see OnBeforeCloseProject()
+		private readonly MainThreadTimer projectCloseTimer
+			= new MainThreadTimer();
 
 
 		protected override string LogPrefix()
@@ -352,7 +271,7 @@ namespace CustomTabNames
 			// list
 			AddProjectHierarchy(hierarchy);
 
-			ProjectCountChanged?.Invoke();
+			ProjectAdded?.Invoke(hierarchy);
 
 			return VSConstants.S_OK;
 		}
@@ -370,38 +289,34 @@ namespace CustomTabNames
 			// unregister for hierarchy events and remove it from the list
 			RemoveProjectHierarchy(hierarchy);
 
-			ProjectCountChanged?.Invoke();
+			// this is an "on before" handler, and so the project count hasn't
+			// been updated yet
+			//
+			// there is no On*After*CloseProject
+			//
+			// it's unclear what kind of delay there is between
+			// OnBeforeCloseProject and the actual update of the project count,
+			// but one second works for now
+			//
+			// in any case, the close can probably still be canceled by the
+			// user if there are unsaved changes, so this may be a false
+			// positive
+			//
+			// todo: try to find a way to get a callback to fire when the count
+			// actually changes instead of using a stupid timer
+
+			projectCloseTimer.Start(1000, () =>
+			{
+				ProjectRemoved?.Invoke(hierarchy);
+			});
+
 			return VSConstants.S_OK;
 		}
 
 		// fired after a project is renamed on disk
 		//
-		public override int OnAfterRenameProject(IVsHierarchy hierarchy)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("OnAfterRenameProject");
-
-			ContainerNameChanged?.Invoke();
-			return VSConstants.S_OK;
-		}
 
 		// fired after a document is moved on disk
-		//
-		private void OnDocumentMoved(DocumentWrapper d)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			DocumentMoved?.Invoke(d);
-		}
-
-		// fired by the HierarchyEventHandlers (per-project) when a folder or
-		// the project itself was renamed
-		//
-		private void OnContainerNameChanged()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			ContainerNameChanged?.Invoke();
-		}
-
 		// called once per project, registers for project hierarchy events and
 		// adds the handler to the list
 		//
@@ -433,8 +348,9 @@ namespace CustomTabNames
 			// registers for hierarchy events on this project
 			hh.Register();
 
-			hh.DocumentMoved += OnDocumentMoved;
-			hh.ContainerNameChanged += OnContainerNameChanged;
+			hh.ProjectRenamed += ProjectRenamed;
+			hh.FolderRenamed += FolderRenamed;
+			hh.DocumentRenamed += DocumentRenamed;
 
 			hierarchyHandlers.Add(cn, hh);
 		}
@@ -475,18 +391,9 @@ namespace CustomTabNames
 	// for project events, but they're ignored because they're ignored in the
 	// solution or hierarchy events above
 	//
-	// some of these events only fire when a change is made in filenames on
-	// disk, see SolutionEventHandlers class above
-	//
 	public sealed class DocumentEventHandlers : DocumentEventHandlersBase
 	{
-		public delegate void DocumentHandler(DocumentWrapper d);
-
-		// fired when a document is opened
-		public event DocumentHandler DocumentOpened;
-
-		// fired when a document is renamed
-		public event DocumentHandler DocumentRenamed;
+		public event DocumentHandler DocumentRenamed, DocumentOpened;
 
 		// registration cookie, used in Unregister()
 		private uint cookie = VSConstants.VSCOOKIE_NIL;
@@ -548,23 +455,24 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			if (wf == null)
-			{
-				// doesn't seem to happen, but handlers assume it's not null
-				return VSConstants.S_OK;
-			}
+			Trace(
+				"OnBeforeDocumentWindowShow: {0}",
+				Utilities.DebugWindowFrameName(wf));
 
 			var d = Utilities.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{
-				// this shouldn't happen
 				Error("OnBeforeDocumentWindowShow: frame has no document");
 				return VSConstants.S_OK;
 			}
 
-			Trace("OnBeforeDocumentWindowShow for {0}", d.Name);
+			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
+			{
+				Error("OnBeforeDocumentWindowShow: can't get item id");
+				return VSConstants.S_OK;
+			}
 
-			DocumentOpened?.Invoke(new DocumentWrapper(d, wf));
+			DocumentOpened?.Invoke(h, id);
 			return VSConstants.S_OK;
 		}
 
@@ -577,8 +485,6 @@ namespace CustomTabNames
 				IVsHierarchy newHier, uint newId, string newPath)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			// note that this is also called when renaming projects
 
 			const uint RenameBit = (uint)__VSRDTATTRIB.RDTA_MkDocument;
 
@@ -593,25 +499,20 @@ namespace CustomTabNames
 				"oldId={2} oldPath={3} newId={4} newPath={5}",
 				cookie, atts, oldId, oldPath, newId, newPath);
 
-			var d = Utilities.DocumentFromCookie(cookie);
-			if (d == null)
+			if (!Utilities.ItemIDFromCookie(cookie, out var h, out var id))
 			{
-				// this happens when a project was renamed, ignore it because
-				// it will also fire a hierarchy event
+				Error("can't get hierarchy for cookie {0}", cookie);
 				return VSConstants.S_OK;
 			}
 
-			var wf = Utilities.WindowFrameFromDocument(d);
-			if (wf == null)
+			if (Utilities.DocumentFromCookie(cookie) == null)
 			{
-				Error(
-					"OnAfterAttributeChangeEx: frame not found for {0}",
-					d.FullName);
-
+				// this happens when renaming a C# project, which is handled
+				// elsewhere, so that's fine
 				return VSConstants.S_OK;
 			}
 
-			DocumentRenamed?.Invoke(new DocumentWrapper(d, wf));
+			DocumentRenamed?.Invoke(h, id);
 
 			return VSConstants.S_OK;
 		}

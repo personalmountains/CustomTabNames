@@ -63,7 +63,7 @@ namespace CustomTabNames
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
-	public sealed class DocumentManager : LoggingContext, IDisposable
+	public sealed class DocumentManager : LoggingContext
 	{
 		private readonly DocumentEventHandlers docHandlers
 			 = new DocumentEventHandlers();
@@ -81,9 +81,6 @@ namespace CustomTabNames
 		public delegate void ContainersChangedHandler();
 		public event ContainersChangedHandler ContainersChanged;
 
-		// see OnProjectCountChanged()
-		private readonly MainThreadTimer projectCountTimer
-			= new MainThreadTimer();
 
 		// built-in projects that can be ignored
 		//
@@ -105,17 +102,15 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			docHandlers.DocumentOpened += OnDocumentChanged;
-			docHandlers.DocumentRenamed += OnDocumentChanged;
+			solHandlers.ProjectAdded += OnProjectAdded;
+			solHandlers.ProjectRemoved += OnProjectRemoved;
+			solHandlers.ProjectRenamed += OnProjectRenamed;
 
-			solHandlers.ProjectCountChanged += OnProjectCountChanged;
-			solHandlers.DocumentMoved += OnDocumentChanged;
-			solHandlers.ContainerNameChanged += OnContainerNameChanged;
-		}
+			solHandlers.FolderRenamed += OnFolderRenamed;
 
-		public void Dispose()
-		{
-			projectCountTimer.Dispose();
+			solHandlers.DocumentRenamed += OnDocumentRenamed;
+			docHandlers.DocumentRenamed += OnDocumentRenamed;
+			docHandlers.DocumentOpened += OnDocumentOpened;
 		}
 
 		// starts the manager
@@ -324,52 +319,79 @@ namespace CustomTabNames
 			}
 		}
 
-		// fired when a document has been opened or renamed
-		//
-		private void OnDocumentChanged(DocumentWrapper d)
+		private void OnProjectAdded(IVsHierarchy h)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("document changed: {0}", d.Document.FullName);
+			Trace("project {0} added", Utilities.DebugHierarchyName(h));
 
-			DocumentChanged?.Invoke(d);
-		}
-
-		// fired when a project was added or removed
-		//
-		private void OnProjectCountChanged()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("project count changed");
-
-			// this is fired from On*Before*CloseProject in EventHandlers, and
-			// so the project count hasn't been updated yet
-			//
-			// there is no On*After*CloseProject
-			//
-			// it's unclear what kind of delay there is between
-			// OnBeforeCloseProject and the actual update of the project count,
-			// but one second works for now
-			//
-			// in any case, the close can probably still be canceled by the
-			// user if there are unsaved changes, so this may be a false
-			// positive
-			//
-			// todo: try to find a way to get a callback to fire when the count
-			// actually changes instead of using a stupid timer
-
-			projectCountTimer.Start(1000, () =>
-			{
-				ContainersChanged?.Invoke();
-			});
-		}
-
-		// fired when filters or projects get renamed
-		//
-		private void OnContainerNameChanged()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("container name changed");
 			ContainersChanged?.Invoke();
+		}
+
+		private void OnProjectRemoved(IVsHierarchy h)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("project {0} removed", Utilities.DebugHierarchyName(h));
+
+			ContainersChanged?.Invoke();
+		}
+
+		private void OnProjectRenamed(IVsHierarchy h)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("project {0} renamed", Utilities.DebugHierarchyName(h));
+
+			ContainersChanged?.Invoke();
+		}
+
+		private void OnFolderRenamed(IVsHierarchy h, uint item)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("folder {0} renamed", Utilities.DebugHierarchyName(h, item));
+
+			ContainersChanged?.Invoke();
+		}
+
+		private void OnDocumentRenamed(IVsHierarchy h, uint item)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("document {0} renamed", Utilities.DebugHierarchyName(h, item));
+			OnDocumentChanged(h, item);
+		}
+
+		private void OnDocumentOpened(IVsHierarchy h, uint item)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			Trace("document {0} opened", Utilities.DebugHierarchyName(h, item));
+			OnDocumentChanged(h, item);
+		}
+
+		// handles both renamed and opened
+		//
+		private void OnDocumentChanged(IVsHierarchy h, uint item)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var d = Utilities.DocumentFromItemID(h, item);
+			if (d == null)
+			{
+				Error(
+					"document {0} has no document object",
+					Utilities.DebugHierarchyName(h, item));
+
+				return;
+			}
+
+			var wf = Utilities.WindowFrameFromDocument(d);
+			if (wf == null)
+			{
+				Error(
+					"document {0} has no frame",
+					Utilities.DebugHierarchyName(h, item));
+
+				return;
+			}
+
+			DocumentChanged?.Invoke(new DocumentWrapper(d, wf));
 		}
 	}
 }

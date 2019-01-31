@@ -65,7 +65,6 @@ namespace CustomTabNames
 		public void Dispose()
 		{
 			timer.Dispose();
-			DocumentManager?.Dispose();
 		}
 
 		protected override async Task InitializeAsync(

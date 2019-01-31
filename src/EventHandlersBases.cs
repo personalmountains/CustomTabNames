@@ -4,13 +4,25 @@ using System;
 
 namespace CustomTabNames
 {
-	// these are used as base classes in EventHandlers and implement the
-	// methods that are not used
+	// these are used as base classes in EventHandlers
 	//
-	// this just makes EventHandlers look cleaner
+	// they define delegates and also implement the methods that are not
+	// used so EventHandlers can look a bit cleaner
+
+
+	public abstract class EventHandlersBase : LoggingContext
+	{
+		public delegate void ProjectHandler(IVsHierarchy h);
+		public delegate void FolderHandler(IVsHierarchy h, uint item);
+		public delegate void DocumentHandler(IVsHierarchy h, uint item);
+
+		//public event ProjectHandler ProjectAdded, ProjectRemoved, ProjectRenamed;
+		//public event FolderHandler FolderRenamed, FolderMoved;
+		//public event DocumentHandler DocumentRenamed, DocumentMoved;
+	}
 
 	public abstract class HierarchyEventHandlersBase :
-		LoggingContext, IVsHierarchyEvents
+		EventHandlersBase, IVsHierarchyEvents
 	{
 		public int OnInvalidateIcon(IntPtr hicon)
 		{
@@ -40,10 +52,15 @@ namespace CustomTabNames
 	}
 
 	public abstract class SolutionEventHandlersBase :
-		LoggingContext,
+		EventHandlersBase,
 		IVsSolutionEvents, IVsSolutionEvents2,
 		IVsSolutionEvents3, IVsSolutionEvents4
 	{
+		public int OnAfterRenameProject(IVsHierarchy hierarchy)
+		{
+			return VSConstants.S_OK;
+		}
+
 		public int OnAfterOpenSolution(object pUnkReserved, int fNewSolution)
 		{
 			return VSConstants.S_OK;
@@ -131,12 +148,11 @@ namespace CustomTabNames
 
 		public abstract int OnAfterOpenProject(IVsHierarchy h, int fAdded);
 		public abstract int OnBeforeCloseProject(IVsHierarchy h, int fRemoved);
-		public abstract int OnAfterRenameProject(IVsHierarchy h);
 	}
 
 
 	public abstract class DocumentEventHandlersBase :
-		LoggingContext,
+		EventHandlersBase,
 		IVsRunningDocTableEvents, IVsRunningDocTableEvents2,
 		IVsRunningDocTableEvents3, IVsRunningDocTableEvents4
 	{

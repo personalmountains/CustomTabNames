@@ -172,6 +172,28 @@ namespace CustomTabNames
 			return DocumentFromWindowFrame(wf);
 		}
 
+		// returns a hierarchy and item for the given cookie
+		//
+		public static bool ItemIDFromCookie(
+			uint cookie, out IVsHierarchy h, out uint itemid)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			h = null;
+			itemid = (uint)VSConstants.VSITEMID.Nil;
+
+			Package.Instance.RDT4.GetDocumentHierarchyItem(
+				cookie, out h, out itemid);
+
+			if (h == null || itemid == (uint)VSConstants.VSITEMID.Nil)
+			{
+				Logger.Error("can't get hierarchy item for cookie {0}", cookie);
+				return false;
+			}
+
+			return true;
+		}
+
 		// returns a hierarchy and itemid for the given document
 		//
 		public static bool ItemIDFromDocument(
@@ -277,17 +299,41 @@ namespace CustomTabNames
 			return false;
 		}
 
+
+		// used for logging
+		//
+		public static string DebugWindowFrameName(IVsWindowFrame wf)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var d = DocumentFromWindowFrame(wf);
+			if (d != null)
+			{
+				if (d.FullName.Length > 0)
+					return d.FullName;
+			}
+
+			return "?";
+		}
+
 		// used for logging
 		//
 		public static string DebugHierarchyName(IVsHierarchy h)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			return DebugHierarchyName(h, (uint)VSConstants.VSITEMID.Root);
+		}
+
+		// used for logging
+		//
+		public static string DebugHierarchyName(IVsHierarchy h, uint item)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			if (h == null)
 				return "(null hierarchy)";
 
-			var e = h.GetCanonicalName(
-				(uint)VSConstants.VSITEMID.Root, out var cn);
+			var e = h.GetCanonicalName(item, out var cn);
 
 			if (e == VSConstants.S_OK)
 			{
@@ -301,9 +347,7 @@ namespace CustomTabNames
 			// failed, try the name property
 
 			e = h.GetProperty(
-				(uint)VSConstants.VSITEMID.Root,
-				(int)__VSHPROPID.VSHPROPID_Name,
-				out var no);
+				item, (int)__VSHPROPID.VSHPROPID_Name, out var no);
 
 			if (e == VSConstants.S_OK)
 			{
