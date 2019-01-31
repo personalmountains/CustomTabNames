@@ -12,10 +12,16 @@ namespace CustomTabNames
 	// the Document is used to feed information to variables, like path and
 	// filters; the IVsWindowFrame is required to set the actual caption
 	//
-	public sealed class DocumentWrapper
+	public sealed class DocumentWrapper : LoggingContext
 	{
 		public Document Document { get; private set; }
 		private IVsWindowFrame Frame { get; set; }
+
+		protected override string LogPrefix()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			return "DocumentWrapper " + Document.FullName;
+		}
 
 		public DocumentWrapper(Document d, IVsWindowFrame f)
 		{
@@ -29,7 +35,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			Logger.Log("setting {0} to {1}", Document.FullName, s);
+			Log("setting to {0}", s);
 
 			// the visible caption is made of a combination of the EditorCaption
 			// and OwnerCaption; setting the EditorCaption to null makes sure
@@ -44,8 +50,7 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			Logger.Log(
-				"resetting {0} to {1}", Document.FullName, Document.Name);
+			Log("resetting to {0}", Document.Name);
 
 			// todo: it'd be nice to set the caption back to a default value
 			// instead of hardcoding the name, but there doesn't seem to be a
@@ -58,7 +63,7 @@ namespace CustomTabNames
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
-	public sealed class DocumentManager : IDisposable
+	public sealed class DocumentManager : LoggingContext, IDisposable
 	{
 		private readonly DocumentEventHandlers docHandlers
 			 = new DocumentEventHandlers();
@@ -88,6 +93,12 @@ namespace CustomTabNames
 			EnvDTE.Constants.vsProjectKindSolutionItems,
 			EnvDTE.Constants.vsProjectKindUnmodeled
 		};
+
+
+		protected override string LogPrefix()
+		{
+			return "DocumentManager";
+		}
 
 
 		public DocumentManager()
@@ -135,7 +146,9 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.ErrorCode(e, "GetRunningDocumentsEnum failed");
+				Logger.ErrorCode(
+					e, "ForEachDocument: GetRunningDocumentsEnum failed");
+
 				return;
 			}
 
@@ -157,9 +170,7 @@ namespace CustomTabNames
 
 				if (e != VSConstants.S_OK)
 				{
-					Logger.ErrorCode(
-						e, "ForEachDocument enumerator next failed");
-
+					Logger.ErrorCode(e, "ForEachDocument: enum next failed");
 					break;
 				}
 
@@ -182,7 +193,9 @@ namespace CustomTabNames
 					// this seems to happen for documents that haven't loaded
 					// yet, they should get picked up by
 					// DocumentEventHandlers.OnBeforeDocumentWindowShow later
-					Logger.Log("skipping {0}, no frame", d.FullName);
+					Logger.Log(
+						"ForEachDocument: skipping {0}, no frame", d.FullName);
+
 					continue;
 				}
 
@@ -205,7 +218,9 @@ namespace CustomTabNames
 
 			if (e != VSConstants.S_OK)
 			{
-				Logger.ErrorCode(e, "GetProjectEnum failed");
+				Logger.ErrorCode(
+					e, "ForEachProjectHierarchy: GetProjectEnum failed");
+
 				return;
 			}
 
@@ -228,7 +243,7 @@ namespace CustomTabNames
 				if (e != VSConstants.S_OK)
 				{
 					Logger.ErrorCode(
-						e, "ForEachProjectHierarchy enumerator next failed");
+						e, "ForEachProjectHierarchy: enum next failed");
 
 					break;
 				}
@@ -259,7 +274,9 @@ namespace CustomTabNames
 
 				if (e != VSConstants.S_OK || !(o is int))
 				{
-					Logger.ErrorCode(e, "failed to get project count");
+					Logger.ErrorCode(
+						e, "HasSingleProject: failed to get project count");
+
 					return false;
 				}
 
@@ -268,7 +285,10 @@ namespace CustomTabNames
 			}
 			catch(Exception e)
 			{
-				Logger.Error("failed to get project count, {0}", e.Message);
+				Logger.Error(
+					"HasSingleProject: failed to get project count, {0}",
+					e.Message);
+
 				return false;
 			}
 		}
@@ -309,7 +329,7 @@ namespace CustomTabNames
 		private void OnDocumentChanged(DocumentWrapper d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("document changed: {0}", d.Document.FullName);
+			Trace("document changed: {0}", d.Document.FullName);
 
 			DocumentChanged?.Invoke(d);
 		}
@@ -319,7 +339,7 @@ namespace CustomTabNames
 		private void OnProjectCountChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("project count changed");
+			Trace("project count changed");
 
 			// this is fired from On*Before*CloseProject in EventHandlers, and
 			// so the project count hasn't been updated yet
@@ -348,7 +368,7 @@ namespace CustomTabNames
 		private void OnContainerNameChanged()
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Logger.Trace("container name changed");
+			Trace("container name changed");
 			ContainersChanged?.Invoke();
 		}
 	}

@@ -42,7 +42,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			return
-				"HierarchyEventHandlers for " +
+				"HierarchyEventHandlers " +
 				Utilities.DebugHierarchyName(Hierarchy);
 		}
 
