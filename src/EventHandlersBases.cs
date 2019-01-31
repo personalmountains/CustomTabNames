@@ -8,6 +8,33 @@ namespace CustomTabNames
 	//
 	// they define delegates and also implement the methods that are not
 	// used so EventHandlers can look a bit cleaner
+	//
+	// these are the events that seem to be fired for various components:
+	//
+	//                  C++                            C#
+	// add project      Sol.OnAfterOpenProject         same
+	// remove project   Sol.OnBeforeCloseProject       same
+	// rename project   Hier.OnPropertyChanged         Hier.OnPropertyChanged
+	//                  --                             Doc.OnAfterAttributeChangeEx
+	//                  --                             Sol.OnAfterRenameProject
+	//
+	// rename folder    Hier.OnPropertyChanged         Hier.OnItemAdded
+	// move folder      Hier.OnItemAdded               same
+	//
+	// rename file      Hier.OnPropertyChanged x3      Hier.OnItemAdded
+	//                  Doc.OnAfterAttributeChangeEx   same
+	//                    (only when opened)
+	// move file        Hier.OnItemAdded               same
+	//                  --                             Doc.OnAfterAttributeChangeEx
+	//                                                   (only when opened)
+	// open file        OnBeforeDocumentWindowShow     same
+	//
+	//
+	// there seems to be a bug where the first folder move in a C# project doesn't
+	// trigger _any_ handlers at all, no idea how to fix that
+	//
+	// todo: renaming a C# folder triggers both a full update _and_ an
+	// OnAfterAttributeChangeEx per file in that folder (and it's recursive!)
 
 
 	public abstract class EventHandlersBase : LoggingContext
