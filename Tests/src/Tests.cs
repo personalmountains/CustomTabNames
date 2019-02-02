@@ -11,8 +11,6 @@ namespace CustomTabNames.Tests
 
 		public static VS VS { get; private set; }
 		public static Operations Operations { get; private set; }
-		public static Project CPP { get; private set; }
-		public static Project CS { get; private set; }
 
 		[AssemblyInitialize]
 		public static void StartTests(TestContext _)
@@ -25,15 +23,29 @@ namespace CustomTabNames.Tests
 
 			Operations.SetExtensionOption("IgnoreBuiltinProjects", true);
 			Operations.SetExtensionOption("IgnoreSingleProject", true);
-
-			CPP = Operations.FindProject("cpp");
-			CS = Operations.FindProject("cs");
+			Operations.SetExtensionOption("LoggingLevel", 4);
 		}
 
 		[AssemblyCleanup]
 		public static void StopTests()
 		{
 			VS.Dispose();
+		}
+
+		public static Project CPP
+		{
+			get
+			{
+				return Operations.GetProject("cpp");
+			}
+		}
+
+		public static Project CS
+		{
+			get
+			{
+				return Operations.GetProject("cs");
+			}
 		}
 	}
 
@@ -43,21 +55,53 @@ namespace CustomTabNames.Tests
 	{
 		public static VS vs;
 		public static Operations ops;
-		public static Project project;
 
 		[ClassInitialize]
 		public static void Init(TestContext _)
 		{
 			vs = Global.VS;
 			ops = Global.Operations;
-			project = Global.CPP;
+		}
+
+		[TestMethod]
+		public void AddRemoveProjectsIgnoreSingle()
+		{
+			using (ops.ScopedExtensionOption("IgnoreSingleProject", true))
+			{
+				var w = ops.OpenFile(Global.CPP, "f.cpp");
+				Assert.AreEqual("cpp::f.cpp", w.Caption);
+
+				string csPath = Global.CS.FullName;
+
+				ops.RemoveProject(Global.CS);
+				Assert.AreEqual("::f.cpp", w.Caption);
+
+				ops.AddProject(csPath);
+				Assert.AreEqual("cpp::f.cpp", w.Caption);
+			}
+		}
+
+		[TestMethod]
+		public void AddRemoveProjectsDontIgnoreSingle()
+		{
+			using (ops.ScopedExtensionOption("IgnoreSingleProject", false))
+			{
+				var w = ops.OpenFile(Global.CPP, "f.cpp");
+				Assert.AreEqual("cpp::f.cpp", w.Caption);
+
+				string csPath = Global.CS.FullName;
+
+				ops.RemoveProject(Global.CS);
+				Assert.AreEqual("cpp::f.cpp", w.Caption);
+				ops.AddProject(csPath);
+				Assert.AreEqual("cpp::f.cpp", w.Caption);
+			}
 		}
 
 		[TestMethod]
 		public void MoveBetweenRootAndFolders()
 		{
-			var w = ops.OpenFile(project, "f.cpp");
-
+			var w = ops.OpenFile(Global.CPP, "f.cpp");
 			Assert.AreEqual("cpp::f.cpp", w.Caption);
 
 			// / to /1

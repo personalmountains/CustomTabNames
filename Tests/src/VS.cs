@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text.RegularExpressions;
@@ -20,9 +21,14 @@ namespace CustomTabNames.Tests
 
 	public class VS : IDisposable
 	{
-		const string devenv =
+		const bool ShowWindow = true;
+		const bool CloseAfter = false;
+
+		const string ProcessPath =
 			@"C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\" +
 			@"Common7\IDE\devenv.exe";
+
+		const string ProcessArguments = "/Embedding /rootsuffix Exp";
 
 		private DTE dte = null;
 		public Operations Operations { get; private set; }
@@ -39,12 +45,15 @@ namespace CustomTabNames.Tests
 
 		public void Dispose()
 		{
-			StopVS();
+#pragma warning disable 0162
+			if (CloseAfter)
+				StopVS();
+#pragma warning restore 0162
 		}
 
 		private void StartVS(string solutionPath, int timeoutMs)
 		{
-			var proc = StartVSProcess();
+			var proc = AttachVSProcess();
 
 			Operations.TryUntilTimeout(timeoutMs, () =>
 			{
@@ -56,6 +65,8 @@ namespace CustomTabNames.Tests
 				throw new Failed("timed out while waiting for process");
 
 			dte.MainWindow.Visible = true;
+
+			dte.Solution.Close();
 			dte.Solution.Open(solutionPath);
 		}
 
@@ -68,20 +79,45 @@ namespace CustomTabNames.Tests
 			}
 		}
 
-		private Process StartVSProcess()
+		private Process AttachVSProcess()
+		{
+			var p = FindRunningVSProcess();
+			if (p != null)
+				return p;
+
+			p = CreateVSProcess();
+			if (p != null)
+				return p;
+
+			throw new Failed("failed to start VS process");
+		}
+
+		private Process FindRunningVSProcess()
+		{
+			var ps = Process.GetProcesses();
+
+			foreach (var p in ps)
+			{
+				if (IsVSProcess(p))
+					return p;
+			}
+
+			return null;
+		}
+
+		private Process CreateVSProcess()
 		{
 			try
 			{
 				ProcessStartInfo procStartInfo = new ProcessStartInfo
 				{
-
-					//Arguments = "/Embedding /rootsuffix Exp";
-					Arguments = "/rootsuffix Exp",
+					Arguments = ProcessArguments,
 					CreateNoWindow = true,
-					FileName = devenv,
-					WindowStyle = ProcessWindowStyle.Hidden,
+					FileName = ProcessPath,
+					WindowStyle = (ShowWindow ?
+						ProcessWindowStyle.Hidden : ProcessWindowStyle.Normal),
 					WorkingDirectory =
-					System.IO.Path.GetDirectoryName(devenv)
+						System.IO.Path.GetDirectoryName(ProcessPath)
 				};
 
 				return Process.Start(procStartInfo);
@@ -89,6 +125,39 @@ namespace CustomTabNames.Tests
 			catch (Exception w)
 			{
 				throw new Failed("failed to start VS process: " + w.Message);
+			}
+		}
+
+		private bool IsVSProcess(Process p)
+		{
+			try
+			{
+				var path = p?.MainModule?.FileName ?? "";
+				if (String.Compare(path, ProcessPath, true) != 0)
+					return false;
+
+				string query =
+					"SELECT CommandLine FROM Win32_Process " +
+					"WHERE ProcessId = " + p.Id;
+
+				using (var searcher = new ManagementObjectSearcher(query))
+				{
+					var matchEnum = searcher.Get().GetEnumerator();
+
+					if (matchEnum.MoveNext())
+					{
+						var cl = matchEnum.Current["CommandLine"]?.ToString();
+
+						if (!cl.Contains(ProcessArguments))
+							return false;
+					}
+				}
+
+				return true;
+			}
+			catch (Exception)
+			{
+				return false;
 			}
 		}
 
@@ -174,10 +243,14 @@ namespace CustomTabNames.Tests
 				try
 				{
 					if (!Operations.SetExtensionOption("Enabled", true))
-						throw new Failed("can't set Enabled option");
+						throw new Failed("can't set Enabled option to true");
+
+					// toggle it to make sure it logs something
+					if (!Operations.SetExtensionOption("Logging", false))
+						throw new Failed("can't set Logging option to false");
 
 					if (!Operations.SetExtensionOption("Logging", true))
-						throw new Failed("can't set Logging option");
+						throw new Failed("can't set Logging option to true");
 
 					var s = LoggingPaneText();
 
@@ -218,8 +291,12 @@ namespace CustomTabNames.Tests
 
 				sel.StartOfDocument();
 				sel.EndOfDocument(true);
+				var t = sel.Text;
 
-				return sel.Text;
+				// reset selection
+				sel.EndOfDocument(false);
+
+				return t;
 			}
 
 			return "";

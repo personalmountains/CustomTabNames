@@ -4,6 +4,22 @@ using Thread = System.Threading.Thread;
 
 namespace CustomTabNames.Tests
 {
+	public class ScopedAction : IDisposable
+	{
+		private Action action;
+
+		public ScopedAction(Action a)
+		{
+			action = a;
+		}
+
+		public void Dispose()
+		{
+			action?.Invoke();
+		}
+	}
+
+
 	public class Operations
 	{
 		private readonly DTE dte;
@@ -64,6 +80,41 @@ namespace CustomTabNames.Tests
 			}
 		}
 
+		public ScopedAction ScopedExtensionOption(string name, object value)
+		{
+			try
+			{
+				var options = dte.Properties["CustomTabNames", "General"];
+				if (options == null)
+					return null;
+
+				var o = options.Item(name);
+				if (o == null)
+					return null;
+
+				var old = o.Value;
+				o.Value = value;
+
+				return new ScopedAction(() =>
+				{
+					SetExtensionOption(name, old);
+				});
+			}
+			catch (Exception)
+			{
+				return null;
+			}
+		}
+
+		public Project GetProject(string name)
+		{
+			var p = FindProject(name);
+			if (p == null)
+				throw new Failed("can't find project {0}", name);
+
+			return p;
+		}
+
 		public Project FindProject(string name)
 		{
 			foreach (Project p in dte.Solution.Projects)
@@ -72,7 +123,28 @@ namespace CustomTabNames.Tests
 					return p;
 			}
 
-			throw new Failed("can't find project {0}", name);
+			return null;
+		}
+
+		public void AddProject(string path)
+		{
+			dte.Solution.AddFromFile(path);
+			Wait();
+		}
+
+		public void RemoveProject(Project p)
+		{
+			var name = p.Name;
+			dte.Solution.Remove(p);
+
+			// try to wait until it's unloaded
+			Operations.TryUntilTimeout(5000, () =>
+			{
+				return (FindProject(name) == null);
+			});
+
+			// then wait for an update
+			Wait();
 		}
 
 		public Window OpenFile(Project p, string name)
@@ -123,7 +195,7 @@ namespace CustomTabNames.Tests
 			try
 			{
 				w.Activate();
-				Yield();
+				Wait();
 			}
 			catch (Exception e)
 			{
@@ -137,7 +209,7 @@ namespace CustomTabNames.Tests
 			try
 			{
 				item.Select(vsUISelectionType.vsUISelectionTypeSelect);
-				Yield();
+				Wait();
 			}
 			catch (Exception e)
 			{
@@ -152,7 +224,7 @@ namespace CustomTabNames.Tests
 			try
 			{
 				dte.ExecuteCommand(s);
-				Yield();
+				Wait();
 			}
 			catch (Exception e)
 			{
@@ -160,9 +232,9 @@ namespace CustomTabNames.Tests
 			}
 		}
 
-		public void Yield()
+		public void Wait(int ms=500)
 		{
-			Thread.Sleep(500);
+			Thread.Sleep(ms);
 		}
 	}
 }
