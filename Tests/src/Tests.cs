@@ -167,7 +167,18 @@ namespace CustomTabNames.Tests
 		}
 
 		[TestMethod]
-		public void MoveBetweenRootAndFolders()
+		public void RenameFile()
+		{
+			AssertCaption("cpp::f.cpp");
+
+			using (ops.RenameFileTemp(@"test\cpp\f.cpp", "f1.cpp"))
+				AssertCaption("cpp::f1.cpp");
+
+			AssertCaption("cpp::f.cpp");
+		}
+
+		[TestMethod]
+		public void MoveFile()
 		{
 			AssertCaption("cpp::f.cpp");
 
@@ -197,6 +208,15 @@ namespace CustomTabNames.Tests
 				AssertCaption("cpp:a:f.cpp");
 			}
 
+			AssertCaption("cpp::f.cpp");
+		}
+
+		[TestMethod]
+		public void OpenFile()
+		{
+			file.Close();
+
+			file = ops.OpenFile(Global.CPP, "f.cpp");
 			AssertCaption("cpp::f.cpp");
 		}
 

@@ -176,14 +176,14 @@ namespace CustomTabNames.Tests
 			});
 		}
 
-		public void RenameFolder(string f, string name)
+		public void RenameFile(string f, string name)
 		{
 			var item = GetItem(solutionExplorerRoot, f);
 			var pi = item.Object as ProjectItem;
 			pi.Name = name;
 		}
 
-		public ScopedAction RenameFolderTemp(string f, string name)
+		public ScopedAction RenameFileTemp(string f, string name)
 		{
 			var item = GetItem(solutionExplorerRoot, f);
 			var pi = item.Object as ProjectItem;
@@ -195,6 +195,16 @@ namespace CustomTabNames.Tests
 			{
 				pi.Name = old;
 			});
+		}
+
+		public void RenameFolder(string f, string name)
+		{
+			RenameFile(f, name);
+		}
+
+		public ScopedAction RenameFolderTemp(string f, string name)
+		{
+			return RenameFileTemp(f, name);
 		}
 
 		public Window OpenFile(Project p, string name)
