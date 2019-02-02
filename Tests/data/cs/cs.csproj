@@ -36,8 +36,8 @@
     <Compile Include="f.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="1\1.1\1.1.1\" />
-    <Folder Include="2\2.1\2.1.1\" />
+    <Folder Include="a\b\c\" />
+    <Folder Include="d\e\f\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

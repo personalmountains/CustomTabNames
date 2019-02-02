@@ -242,14 +242,14 @@ namespace CustomTabNames.Tests
 			{
 				try
 				{
-					if (!Operations.SetExtensionOption("Enabled", true))
+					if (!Operations.SetOption("Enabled", true))
 						throw new Failed("can't set Enabled option to true");
 
 					// toggle it to make sure it logs something
-					if (!Operations.SetExtensionOption("Logging", false))
+					if (!Operations.SetOption("Logging", false))
 						throw new Failed("can't set Logging option to false");
 
-					if (!Operations.SetExtensionOption("Logging", true))
+					if (!Operations.SetOption("Logging", true))
 						throw new Failed("can't set Logging option to true");
 
 					var s = LoggingPaneText();

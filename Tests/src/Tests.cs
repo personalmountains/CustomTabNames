@@ -18,12 +18,12 @@ namespace CustomTabNames.Tests
 			VS = new VS(SolutionPath);
 			Operations = VS.Operations;
 
-			Operations.SetExtensionOption("Template",
-				"$(ProjectName):$(FilterPath):$(Filename)");
+			Operations.SetOption("Template",
+				"$(ProjectName):$(FolderPath):$(Filename)");
 
-			Operations.SetExtensionOption("IgnoreBuiltinProjects", true);
-			Operations.SetExtensionOption("IgnoreSingleProject", true);
-			Operations.SetExtensionOption("LoggingLevel", 4);
+			Operations.SetOption("IgnoreBuiltinProjects", true);
+			Operations.SetOption("IgnoreSingleProject", true);
+			Operations.SetOption("LoggingLevel", 4);
 		}
 
 		[AssemblyCleanup]
@@ -55,89 +55,121 @@ namespace CustomTabNames.Tests
 	{
 		public static VS vs;
 		public static Operations ops;
+		public static Window file;
 
 		[ClassInitialize]
 		public static void Init(TestContext _)
 		{
 			vs = Global.VS;
 			ops = Global.Operations;
+			file = ops.OpenFile(Global.CPP, "f.cpp");
 		}
 
 		[TestMethod]
 		public void AddRemoveProjectsIgnoreSingle()
 		{
-			using (ops.ScopedExtensionOption("IgnoreSingleProject", true))
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
+
+			using (ops.SetOptionTemp("IgnoreSingleProject", true))
 			{
-				var w = ops.OpenFile(Global.CPP, "f.cpp");
-				Assert.AreEqual("cpp::f.cpp", w.Caption);
+				using (ops.RemoveProjectTemp(Global.CS))
+					Assert.AreEqual("::f.cpp", file.Caption);
 
-				string csPath = Global.CS.FullName;
-
-				ops.RemoveProject(Global.CS);
-				Assert.AreEqual("::f.cpp", w.Caption);
-
-				ops.AddProject(csPath);
-				Assert.AreEqual("cpp::f.cpp", w.Caption);
+				Assert.AreEqual("cpp::f.cpp", file.Caption);
 			}
 		}
 
 		[TestMethod]
 		public void AddRemoveProjectsDontIgnoreSingle()
 		{
-			using (ops.ScopedExtensionOption("IgnoreSingleProject", false))
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
+
+			using (ops.SetOptionTemp("IgnoreSingleProject", false))
 			{
-				var w = ops.OpenFile(Global.CPP, "f.cpp");
-				Assert.AreEqual("cpp::f.cpp", w.Caption);
+				using (ops.RemoveProjectTemp(Global.CS))
+					Assert.AreEqual("cpp::f.cpp", file.Caption);
 
-				string csPath = Global.CS.FullName;
+				Assert.AreEqual("cpp::f.cpp", file.Caption);
+			}
+		}
 
-				ops.RemoveProject(Global.CS);
-				Assert.AreEqual("cpp::f.cpp", w.Caption);
-				ops.AddProject(csPath);
-				Assert.AreEqual("cpp::f.cpp", w.Caption);
+		[TestMethod]
+		public void RenameProject()
+		{
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
+
+			using (ops.RenameProjectTemp(Global.CPP, "cpp2"))
+				Assert.AreEqual("cpp2::f.cpp", file.Caption);
+
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
+		}
+
+		[TestMethod]
+		public void RenameFolder()
+		{
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
+
+			using (ops.MoveFileTemp(@"test\cpp\f.cpp", @"test\cpp\a\b\c"))
+			{
+				Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+
+				using (ops.RenameFolderTemp(@"test\cpp\a", "aa"))
+				{
+					Assert.AreEqual("cpp:aa/b/c:f.cpp", file.Caption);
+
+					using (ops.RenameFolderTemp(@"test\cpp\aa\b", "bb"))
+					{
+						Assert.AreEqual("cpp:aa/bb/c:f.cpp", file.Caption);
+
+						using (ops.RenameFolderTemp(@"test\cpp\aa\bb\c", "cc"))
+							Assert.AreEqual("cpp:aa/bb/cc:f.cpp", file.Caption);
+
+						Assert.AreEqual("cpp:aa/bb/c:f.cpp", file.Caption);
+					}
+
+					Assert.AreEqual("cpp:aa/b/c:f.cpp", file.Caption);
+				}
+
+				Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
 			}
 		}
 
 		[TestMethod]
 		public void MoveBetweenRootAndFolders()
 		{
-			var w = ops.OpenFile(Global.CPP, "f.cpp");
-			Assert.AreEqual("cpp::f.cpp", w.Caption);
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
 
-			// / to /1
-			ops.MoveFile(
-				@"test\cpp\f.cpp",
-				@"test\cpp\1");
+			// / to /a
+			using (ops.MoveFileTemp(@"test\cpp\f.cpp", @"test\cpp\a"))
+			{
+				Assert.AreEqual("cpp:a:f.cpp", file.Caption);
 
-			Assert.AreEqual("cpp:1:f.cpp", w.Caption);
+				// /a to /a/b
+				using (ops.MoveFileTemp(@"test\cpp\a\f.cpp", @"test\cpp\a\b"))
+				{
+					Assert.AreEqual("cpp:a/b:f.cpp", file.Caption);
 
-			// /1 to /1/1.1
-			ops.MoveFile(
-				@"test\cpp\1\f.cpp",
-				@"test\cpp\1\1.1");
+					// /a/b to /a/b/c
+					using (ops.MoveFileTemp(@"test\cpp\a\b\f.cpp", @"test\cpp\a\b\c"))
+					{
+						Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
 
-			Assert.AreEqual("cpp:1/1.1:f.cpp", w.Caption);
+						// /a/b/c to d/e/f
+						using (ops.MoveFileTemp(@"test\cpp\a\b\c\f.cpp", @"test\cpp\d\e\f"))
+						{
+							Assert.AreEqual("cpp:d/e/f:f.cpp", file.Caption);
+						}
 
-			// /1/1.1 to /1/1.1/1.1.1
-			ops.MoveFile(
-				@"test\cpp\1\1.1\f.cpp",
-				@"test\cpp\1\1.1\1.1.1");
+						Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+					}
 
-			Assert.AreEqual("cpp:1/1.1/1.1.1:f.cpp", w.Caption);
+					Assert.AreEqual("cpp:a/b:f.cpp", file.Caption);
+				}
 
-			// /1/1.1/1.1.1 to 2/2.1/2.1.1
-			ops.MoveFile(
-				@"test\cpp\1\1.1\1.1.1\f.cpp",
-				@"test\cpp\2\2.1\2.1.1");
+				Assert.AreEqual("cpp:a:f.cpp", file.Caption);
+			}
 
-			Assert.AreEqual("cpp:2/2.1/2.1.1:f.cpp", w.Caption);
-
-			// back to root
-			ops.MoveFile(
-				@"test\cpp\2\2.1\2.1.1\f.cpp",
-				@"test\cpp");
-
-			Assert.AreEqual("cpp::f.cpp", w.Caption);
+			Assert.AreEqual("cpp::f.cpp", file.Caption);
 		}
 	}
 }

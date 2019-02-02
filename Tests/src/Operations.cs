@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using EnvDTE;
 using Thread = System.Threading.Thread;
 
@@ -59,7 +60,7 @@ namespace CustomTabNames.Tests
 			return false;
 		}
 
-		public bool SetExtensionOption(string name, object value)
+		public bool SetOption(string name, object value)
 		{
 			try
 			{
@@ -80,7 +81,7 @@ namespace CustomTabNames.Tests
 			}
 		}
 
-		public ScopedAction ScopedExtensionOption(string name, object value)
+		public ScopedAction SetOptionTemp(string name, object value)
 		{
 			try
 			{
@@ -97,7 +98,7 @@ namespace CustomTabNames.Tests
 
 				return new ScopedAction(() =>
 				{
-					SetExtensionOption(name, old);
+					SetOption(name, old);
 				});
 			}
 			catch (Exception)
@@ -147,6 +148,55 @@ namespace CustomTabNames.Tests
 			Wait();
 		}
 
+		public ScopedAction RemoveProjectTemp(Project p)
+		{
+			string path = p.FullName;
+			RemoveProject(p);
+
+			return new ScopedAction(() =>
+			{
+				AddProject(path);
+			});
+		}
+
+		public void RenameProject(Project p, string name)
+		{
+			p.Name = name;
+			Wait();
+		}
+
+		public ScopedAction RenameProjectTemp(Project p, string name)
+		{
+			string old = p.Name;
+			RenameProject(p, name);
+
+			return new ScopedAction(() =>
+			{
+				RenameProject(p, old);
+			});
+		}
+
+		public void RenameFolder(string f, string name)
+		{
+			var item = GetItem(solutionExplorerRoot, f);
+			var pi = item.Object as ProjectItem;
+			pi.Name = name;
+		}
+
+		public ScopedAction RenameFolderTemp(string f, string name)
+		{
+			var item = GetItem(solutionExplorerRoot, f);
+			var pi = item.Object as ProjectItem;
+
+			string old = pi.Name;
+			pi.Name = name;
+
+			return new ScopedAction(() =>
+			{
+				pi.Name = old;
+			});
+		}
+
 		public Window OpenFile(Project p, string name)
 		{
 			var pi = p.ProjectItems.Item(name);
@@ -167,6 +217,23 @@ namespace CustomTabNames.Tests
 			DoCommand("Edit.Cut");
 			SelectItem(toItem);
 			DoCommand("Edit.Paste");
+		}
+
+		public ScopedAction MoveFileTemp(string from, string to)
+		{
+			MoveFile(from, to);
+
+			return new ScopedAction(() =>
+			{
+				var fromParts = new List<string>(from.Split('\\'));
+				var filename = fromParts[fromParts.Count - 1];
+				fromParts.RemoveAt(fromParts.Count - 1);
+
+				var rfrom = to + "\\" + filename;
+				var rto = string.Join("\\", fromParts);
+
+				MoveFile(rfrom, rto);
+			});
 		}
 
 		private void ExpandAll(UIHierarchyItems root)
