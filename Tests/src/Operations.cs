@@ -37,7 +37,7 @@ namespace CustomTabNames.Tests
 			solutionExplorerRoot =
 				(UIHierarchy)solutionExplorer.Object;
 
-			ExpandAll(solutionExplorerRoot.UIHierarchyItems);
+			ExpandAll();
 		}
 
 		public static bool TryUntilTimeout(
@@ -217,6 +217,9 @@ namespace CustomTabNames.Tests
 			DoCommand("Edit.Cut");
 			SelectItem(toItem);
 			DoCommand("Edit.Paste");
+
+			// folders become closed when they're moved around
+			ExpandAll();
 		}
 
 		public ScopedAction MoveFileTemp(string from, string to)
@@ -236,8 +239,21 @@ namespace CustomTabNames.Tests
 			});
 		}
 
-		private void ExpandAll(UIHierarchyItems root)
+		public void MoveFolder(string from, string to)
 		{
+			MoveFile(from, to);
+		}
+
+		public ScopedAction MoveFolderTemp(string from, string to)
+		{
+			return MoveFileTemp(from, to);
+		}
+
+		private void ExpandAll(UIHierarchyItems root = null)
+		{
+			if (root == null)
+				root = solutionExplorerRoot.UIHierarchyItems;
+
 			root.Expanded = true;
 
 			foreach (UIHierarchyItem i in root)

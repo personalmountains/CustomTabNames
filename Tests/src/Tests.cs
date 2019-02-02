@@ -135,6 +135,38 @@ namespace CustomTabNames.Tests
 		}
 
 		[TestMethod]
+		public void MoveFolder()
+		{
+			AssertCaption("cpp::f.cpp");
+
+			using (ops.MoveFileTemp(@"test\cpp\f.cpp", @"test\cpp\a\b\c"))
+			{
+				AssertCaption("cpp:a/b/c:f.cpp");
+
+				using (ops.MoveFolderTemp(@"test\cpp\a\b\c", @"test\cpp"))
+				{
+					AssertCaption("cpp:c:f.cpp");
+
+					using (ops.MoveFolderTemp(@"test\cpp\c", @"test\cpp\a"))
+					{
+						AssertCaption("cpp:a/c:f.cpp");
+
+						using (ops.MoveFolderTemp(@"test\cpp\a\c", @"test\cpp\a\b"))
+							AssertCaption("cpp:a/b/c:f.cpp");
+
+						AssertCaption("cpp:a/c:f.cpp");
+					}
+
+					AssertCaption("cpp:c:f.cpp");
+				}
+
+				AssertCaption("cpp:a/b/c:f.cpp");
+			}
+
+			AssertCaption("cpp::f.cpp");
+		}
+
+		[TestMethod]
 		public void MoveBetweenRootAndFolders()
 		{
 			AssertCaption("cpp::f.cpp");
@@ -170,7 +202,7 @@ namespace CustomTabNames.Tests
 
 		private void AssertCaption(string s)
 		{
-			AssertCaption(s);
+			Assert.AreEqual(s, file.Caption);
 		}
 	}
 }
