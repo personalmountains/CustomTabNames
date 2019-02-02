@@ -68,108 +68,109 @@ namespace CustomTabNames.Tests
 		[TestMethod]
 		public void AddRemoveProjectsIgnoreSingle()
 		{
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 
 			using (ops.SetOptionTemp("IgnoreSingleProject", true))
 			{
 				using (ops.RemoveProjectTemp(Global.CS))
-					Assert.AreEqual("::f.cpp", file.Caption);
+					AssertCaption("::f.cpp");
 
-				Assert.AreEqual("cpp::f.cpp", file.Caption);
+				AssertCaption("cpp::f.cpp");
 			}
 		}
 
 		[TestMethod]
 		public void AddRemoveProjectsDontIgnoreSingle()
 		{
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 
 			using (ops.SetOptionTemp("IgnoreSingleProject", false))
 			{
 				using (ops.RemoveProjectTemp(Global.CS))
-					Assert.AreEqual("cpp::f.cpp", file.Caption);
+					AssertCaption("cpp::f.cpp");
 
-				Assert.AreEqual("cpp::f.cpp", file.Caption);
+				AssertCaption("cpp::f.cpp");
 			}
 		}
 
 		[TestMethod]
 		public void RenameProject()
 		{
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 
 			using (ops.RenameProjectTemp(Global.CPP, "cpp2"))
-				Assert.AreEqual("cpp2::f.cpp", file.Caption);
+				AssertCaption("cpp2::f.cpp");
 
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 		}
 
 		[TestMethod]
 		public void RenameFolder()
 		{
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 
 			using (ops.MoveFileTemp(@"test\cpp\f.cpp", @"test\cpp\a\b\c"))
 			{
-				Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+				AssertCaption("cpp:a/b/c:f.cpp");
 
-				using (ops.RenameFolderTemp(@"test\cpp\a", "aa"))
+				using (ops.RenameFolderTemp(@"test\cpp\a", "1"))
 				{
-					Assert.AreEqual("cpp:aa/b/c:f.cpp", file.Caption);
+					AssertCaption("cpp:1/b/c:f.cpp");
 
-					using (ops.RenameFolderTemp(@"test\cpp\aa\b", "bb"))
+					using (ops.RenameFolderTemp(@"test\cpp\1\b", "2"))
 					{
-						Assert.AreEqual("cpp:aa/bb/c:f.cpp", file.Caption);
+						AssertCaption("cpp:1/2/c:f.cpp");
 
-						using (ops.RenameFolderTemp(@"test\cpp\aa\bb\c", "cc"))
-							Assert.AreEqual("cpp:aa/bb/cc:f.cpp", file.Caption);
+						using (ops.RenameFolderTemp(@"test\cpp\1\2\c", "3"))
+							AssertCaption("cpp:1/2/3:f.cpp");
 
-						Assert.AreEqual("cpp:aa/bb/c:f.cpp", file.Caption);
+						AssertCaption("cpp:1/2/c:f.cpp");
 					}
 
-					Assert.AreEqual("cpp:aa/b/c:f.cpp", file.Caption);
+					AssertCaption("cpp:1/b/c:f.cpp");
 				}
 
-				Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+				AssertCaption("cpp:a/b/c:f.cpp");
 			}
 		}
 
 		[TestMethod]
 		public void MoveBetweenRootAndFolders()
 		{
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
 
-			// / to /a
 			using (ops.MoveFileTemp(@"test\cpp\f.cpp", @"test\cpp\a"))
 			{
-				Assert.AreEqual("cpp:a:f.cpp", file.Caption);
+				AssertCaption("cpp:a:f.cpp");
 
-				// /a to /a/b
 				using (ops.MoveFileTemp(@"test\cpp\a\f.cpp", @"test\cpp\a\b"))
 				{
-					Assert.AreEqual("cpp:a/b:f.cpp", file.Caption);
+					AssertCaption("cpp:a/b:f.cpp");
 
-					// /a/b to /a/b/c
 					using (ops.MoveFileTemp(@"test\cpp\a\b\f.cpp", @"test\cpp\a\b\c"))
 					{
-						Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+						AssertCaption("cpp:a/b/c:f.cpp");
 
-						// /a/b/c to d/e/f
 						using (ops.MoveFileTemp(@"test\cpp\a\b\c\f.cpp", @"test\cpp\d\e\f"))
 						{
-							Assert.AreEqual("cpp:d/e/f:f.cpp", file.Caption);
+							AssertCaption("cpp:d/e/f:f.cpp");
 						}
 
-						Assert.AreEqual("cpp:a/b/c:f.cpp", file.Caption);
+						AssertCaption("cpp:a/b/c:f.cpp");
 					}
 
-					Assert.AreEqual("cpp:a/b:f.cpp", file.Caption);
+					AssertCaption("cpp:a/b:f.cpp");
 				}
 
-				Assert.AreEqual("cpp:a:f.cpp", file.Caption);
+				AssertCaption("cpp:a:f.cpp");
 			}
 
-			Assert.AreEqual("cpp::f.cpp", file.Caption);
+			AssertCaption("cpp::f.cpp");
+		}
+
+		private void AssertCaption(string s)
+		{
+			AssertCaption(s);
 		}
 	}
 }
