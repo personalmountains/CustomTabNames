@@ -7,7 +7,7 @@ namespace CustomTabNames.Tests
 	public class Global
 	{
 		private const string SolutionPath =
-			"c:\\dev\\projects\\CustomTabNames\\Tests\\data\\test.sln";
+			"..\\..\\..\\data\\test.sln";
 
 		public static VS VS { get; private set; }
 		public static Operations Operations { get; private set; }
@@ -15,7 +15,7 @@ namespace CustomTabNames.Tests
 		[AssemblyInitialize]
 		public static void StartTests(TestContext _)
 		{
-			VS = new VS(SolutionPath);
+			VS = new VS(System.IO.Path.GetFullPath(SolutionPath));
 			Operations = VS.Operations;
 
 			Operations.SetOption("Template",

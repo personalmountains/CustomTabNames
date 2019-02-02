@@ -67,7 +67,17 @@ namespace CustomTabNames.Tests
 			dte.MainWindow.Visible = false;
 
 			dte.Solution.Close();
-			dte.Solution.Open(solutionPath);
+
+			try
+			{
+				dte.Solution.Open(solutionPath);
+			}
+			catch (Exception e)
+			{
+				throw new Failed(
+					"can't open solution from '{0}', {1}",
+					solutionPath, e.Message);
+			}
 		}
 
 		private void StopVS()
