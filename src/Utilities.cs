@@ -385,9 +385,6 @@ namespace CustomTabNames
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
-			h = null;
-			itemid = (uint)VSConstants.VSITEMID.Nil;
-
 			Package.Instance.RDT4.GetDocumentHierarchyItem(
 				cookie, out h, out itemid);
 

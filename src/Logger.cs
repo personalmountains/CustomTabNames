@@ -70,6 +70,15 @@ namespace CustomTabNames
 			LogImpl(4, format, args);
 		}
 
+		// always logs the given string, regardless of level, as long as
+		// logging is enabled
+		//
+		public static void LogAlways(string format, params object[] args)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+			LogImpl(-1, format, args);
+		}
+
 
 		private static void LogImpl(int level, string format, object[] args)
 		{
@@ -79,8 +88,9 @@ namespace CustomTabNames
 			if (!Options.Logging)
 				return;
 
-			// don't log if level is too high
-			if (level > Options.LoggingLevel)
+			// don't log if level is too high, always log if level is -1,
+			// see LogAlways()
+			if (level >= 0 && level > Options.LoggingLevel)
 				return;
 
 			// make sure the pane exists

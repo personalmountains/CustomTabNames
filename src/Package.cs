@@ -88,6 +88,7 @@ namespace CustomTabNames
 			Options.TemplateChanged += OnTemplateChanged;
 			Options.IgnoreBuiltinProjectsChanged += OnIgnoreBuiltinProjectsChanged;
 			Options.IgnoreSingleProjectChanged += OnIgnoreSingleProjectChanged;
+			Options.LoggingChanged += OnLoggingChanged;
 
 			if (Options.Enabled)
 			{
@@ -266,6 +267,16 @@ namespace CustomTabNames
 
 			Logger.Log("ignore single project option changed");
 			FixAllDocuments();
+		}
+
+		// fired when the logging flag is changed
+		//
+		private void OnLoggingChanged()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			if (Options.Logging)
+				Logger.LogAlways("logging enabled");
 		}
 
 		// fired when a document or window has been opened

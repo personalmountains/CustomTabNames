@@ -1,3 +1,10 @@
 /.vs
 /bin
 /obj
+/Tests/obj
+/Tests/bin
+/TestResults
+/Tests/data/.vs
+/Tests/data/cs/bin
+/Tests/data/cs/obj
+/Tests/data/cpp/*.filters

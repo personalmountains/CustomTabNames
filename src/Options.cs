@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
@@ -10,7 +12,11 @@ namespace CustomTabNames
 	// designer window for this on double-click, but it gives errors and is
 	// useless in any case; this forces a code view
 	//
+	// ComVisible(true) allows these options to be accessed by automation
+	// through DTE.Properties, which is used by tests
+	//
 	[System.ComponentModel.DesignerCategory("")]
+	[ComVisible(true)]
 	public class Options : DialogPage
 	{
 		struct Defaults
