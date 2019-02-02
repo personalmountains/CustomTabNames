@@ -43,6 +43,27 @@ namespace CustomTabNames.Tests
 			return false;
 		}
 
+		public bool SetExtensionOption(string name, object value)
+		{
+			try
+			{
+				var options = dte.Properties["CustomTabNames", "General"];
+				if (options == null)
+					return false;
+
+				var o = options.Item(name);
+				if (o == null)
+					return false;
+
+				o.Value = value;
+				return true;
+			}
+			catch (Exception)
+			{
+				return false;
+			}
+		}
+
 		public Project FindProject(string name)
 		{
 			foreach (Project p in dte.Solution.Projects)

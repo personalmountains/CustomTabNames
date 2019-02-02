@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="1">
+      <UniqueIdentifier>{e665f7a1-62be-4778-8ef3-a403010b9178}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="1\1.1">
+      <UniqueIdentifier>{fa348162-c69f-41ae-bbc1-249d63f03abc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="1\1.1\1.1.1">
+      <UniqueIdentifier>{6466358f-87b3-45f3-9ac0-aef6d4b2e8ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2">
+      <UniqueIdentifier>{97cc50b6-3d2a-4a5d-9b2d-27195f8fd326}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2\2.1">
+      <UniqueIdentifier>{76ae34de-d28c-4f5c-bb78-7bedbfd3f4c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2\2.1\2.1.1">
+      <UniqueIdentifier>{cd6d8980-d589-4e61-b85c-f1eb00e7cb1f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="f.cpp" />
+  </ItemGroup>
+</Project>

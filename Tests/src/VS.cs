@@ -173,7 +173,12 @@ namespace CustomTabNames.Tests
 			{
 				try
 				{
-					SetExtensionProperties();
+					if (!Operations.SetExtensionOption("Enabled", true))
+						throw new Failed("can't set Enabled option");
+
+					if (!Operations.SetExtensionOption("Logging", true))
+						throw new Failed("can't set Logging option");
+
 					var s = LoggingPaneText();
 
 					if (s.Contains("logging enabled") ||
@@ -193,25 +198,6 @@ namespace CustomTabNames.Tests
 
 			if (!inited)
 				throw new Failed("extension didn't initialize");
-		}
-
-		private void SetExtensionProperties()
-		{
-			var options = dte.Properties["CustomTabNames", "General"];
-			if (options == null)
-				throw new Failed("can't get options");
-
-			var enabled = options.Item("Enabled");
-			if (enabled == null)
-				throw new Failed("can't get Enabled option");
-
-			enabled.Value = true;
-
-			var loggingEnabled = options.Item("Logging");
-			if (loggingEnabled == null)
-				throw new Failed("can't get Logging option");
-
-			loggingEnabled.Value = true;
 		}
 
 		private string LoggingPaneText()
