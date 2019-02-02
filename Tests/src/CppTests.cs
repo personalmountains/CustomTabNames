@@ -4,53 +4,6 @@ using EnvDTE;
 namespace CustomTabNames.Tests
 {
 	[TestClass]
-	public class Global
-	{
-		private const string SolutionPath =
-			"c:\\dev\\projects\\CustomTabNames\\Tests\\data\\test.sln";
-
-		public static VS VS { get; private set; }
-		public static Operations Operations { get; private set; }
-
-		[AssemblyInitialize]
-		public static void StartTests(TestContext _)
-		{
-			VS = new VS(SolutionPath);
-			Operations = VS.Operations;
-
-			Operations.SetOption("Template",
-				"$(ProjectName):$(FolderPath):$(Filename)");
-
-			Operations.SetOption("IgnoreBuiltinProjects", true);
-			Operations.SetOption("IgnoreSingleProject", true);
-			Operations.SetOption("LoggingLevel", 4);
-		}
-
-		[AssemblyCleanup]
-		public static void StopTests()
-		{
-			VS.Dispose();
-		}
-
-		public static Project CPP
-		{
-			get
-			{
-				return Operations.GetProject("cpp");
-			}
-		}
-
-		public static Project CS
-		{
-			get
-			{
-				return Operations.GetProject("cs");
-			}
-		}
-	}
-
-
-	[TestClass]
 	public class CppTests
 	{
 		public static VS vs;
@@ -217,6 +170,17 @@ namespace CustomTabNames.Tests
 			file.Close();
 
 			file = ops.OpenFile(Global.CPP, "f.cpp");
+			AssertCaption("cpp::f.cpp");
+		}
+
+		[TestMethod]
+		public void ToggleExtension()
+		{
+			AssertCaption("cpp::f.cpp");
+
+			using (ops.SetOptionTemp("Enabled", false))
+				AssertCaption("f.cpp");
+
 			AssertCaption("cpp::f.cpp");
 		}
 
