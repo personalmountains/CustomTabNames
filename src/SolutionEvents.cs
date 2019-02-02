@@ -138,7 +138,7 @@ namespace CustomTabNames
 			// unregister for hierarchy events and remove it from the list
 			RemoveProjectHierarchy(hierarchy);
 
-			if (removed != 0)
+			if (removed == 0)
 				return VSConstants.S_OK;
 
 			// this is an "on before" handler, and so the project count hasn't
@@ -156,6 +156,7 @@ namespace CustomTabNames
 
 			projectCloseTimer.Start(1000, () =>
 			{
+				Trace("projectCloseTimer fired");
 				ProjectRemoved?.Invoke(hierarchy);
 			});
 
