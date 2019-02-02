@@ -47,10 +47,10 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\CppTests.cs" />
     <Compile Include="src\Global.cs" />
     <Compile Include="src\Operations.cs" />
     <Compile Include="src\VS.cs" />
-    <Compile Include="src\Tests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
