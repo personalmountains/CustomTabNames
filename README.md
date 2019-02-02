@@ -23,10 +23,10 @@ Filename of the document.
 Full path of the document.
 
 #### `FilterPath`
-All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Ends with a `/` if not empty. Can be empty if the file is directly a child of a project.
+All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Can be empty if the file is directly a child of a project.
 
 #### `ParentFilter`
-Parent filter of the document. Ends with a `/` if not empty. Can be empty if the file is directly a child of a project.
+Parent filter of the document. Can be empty if the file is directly a child of a project.
 
 ## Options
 Options are under the item 'CustomTabNames' in the Options dialog.
@@ -36,7 +36,7 @@ Options are under the item 'CustomTabNames' in the Options dialog.
 #### Enabled
 If false, all tabs are restored to showing the filename. Defaults to `true`.
 
-#### Ignore builtin projects
+#### Ignore built-in projects
 Some items are under dummy projects. For example, opening a file that's not in the solution puts it under a project named "Miscellaneous files", which would appear with `$(ProjectName)`. When `true`, these dummy projects are ignored and `$(ProjectName)` will expand to an empty string. Defaults to `true`.
 
 #### Ignore single project

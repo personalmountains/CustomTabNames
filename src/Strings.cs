@@ -37,9 +37,9 @@
 			"empty.";
 
 		public const string OptionIgnoreBuiltinProjects =
-			"Ignore builtin projects";
+			"Ignore built-in projects";
 		public const string OptionIgnoreBuiltinProjectsDescription =
-			"Don't display builtin project names like 'Miscellaneous Files'.";
+			"Don't display built-in project names like 'Miscellaneous Files'.";
 
 		public const string OptionIgnoreSingleProject = "Ignore single project";
 		public const string OptionIgnoreSingleProjectDescription =

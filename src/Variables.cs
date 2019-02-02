@@ -186,14 +186,7 @@ namespace CustomTabNames
 		public static string FilterPath(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var s = string.Join("/", FilterPathParts(d));
-
-			// ending slash
-			if (s.Length > 0)
-				s += "/";
-
-			return s;
+			return string.Join("/", FilterPathParts(d));
 		}
 
 		// returns the name of the document's parent filter, or an empty string
@@ -207,9 +200,6 @@ namespace CustomTabNames
 			var parts = FilterPathParts(d);
 			if (parts.Count > 0)
 				s = parts[parts.Count - 1];
-
-			if (s.Length > 0)
-				s += "/";
 
 			return s;
 		}
