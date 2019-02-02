@@ -117,7 +117,7 @@ namespace CustomTabNames.Tests
 			{
 				AssertCaption("a/b/c");
 
-				using (ops.RenameFolderTemp(p + "\a", "1"))
+				using (ops.RenameFolderTemp(p + @"\a", "1"))
 				{
 					AssertCaption("1/b/c");
 
@@ -189,15 +189,15 @@ namespace CustomTabNames.Tests
 			{
 				AssertCaption("a");
 
-				using (ops.MoveFileTemp(p + @"\a\f.cpp", p + @"\a\b"))
+				using (ops.MoveFileTemp(p + @"\a\" + filename, p + @"\a\b"))
 				{
 					AssertCaption("a/b");
 
-					using (ops.MoveFileTemp(p + @"\a\b\f.cpp", p + @"\a\b\c"))
+					using (ops.MoveFileTemp(p + @"\a\b\" + filename, p + @"\a\b\c"))
 					{
 						AssertCaption("a/b/c");
 
-						using (ops.MoveFileTemp(p + @"\a\b\c\f.cpp", p + @"\d\e\f"))
+						using (ops.MoveFileTemp(p + @"\a\b\c\" + filename, p + @"\d\e\f"))
 						{
 							AssertCaption("d/e/f");
 						}

@@ -3,26 +3,26 @@
 namespace CustomTabNames.Tests
 {
 	[TestClass]
-	public class CppTests
+	public class CsTests
 	{
 		public static Tests tests;
 
 		[ClassInitialize]
 		public static void Init(TestContext _)
 		{
-			tests = new Tests("cpp", "f.cpp");
+			tests = new Tests("cs", "f.cs");
 		}
 
 		[TestMethod]
 		public void AddRemoveProjectsIgnoreSingle()
 		{
-			tests.AddRemoveProjectsIgnoreSingle(Global.CS);
+			tests.AddRemoveProjectsIgnoreSingle(Global.CPP);
 		}
 
 		[TestMethod]
 		public void AddRemoveProjectsDontIgnoreSingle()
 		{
-			tests.AddRemoveProjectsDontIgnoreSingle(Global.CS);
+			tests.AddRemoveProjectsDontIgnoreSingle(Global.CPP);
 		}
 
 		[TestMethod]
@@ -58,7 +58,7 @@ namespace CustomTabNames.Tests
 		[TestMethod]
 		public void OpenFile()
 		{
-			tests.OpenFile(Global.CPP);
+			tests.OpenFile(Global.CS);
 		}
 
 		[TestMethod]

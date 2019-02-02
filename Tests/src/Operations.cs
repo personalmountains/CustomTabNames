@@ -181,6 +181,9 @@ namespace CustomTabNames.Tests
 			var item = GetItem(solutionExplorerRoot, f);
 			var pi = item.Object as ProjectItem;
 			pi.Name = name;
+
+			// some folders become closed when they're renamed
+			ExpandAll();
 		}
 
 		public ScopedAction RenameFileTemp(string f, string name)
@@ -191,9 +194,15 @@ namespace CustomTabNames.Tests
 			string old = pi.Name;
 			pi.Name = name;
 
+			// some folders become closed when they're renamed
+			ExpandAll();
+
 			return new ScopedAction(() =>
 			{
 				pi.Name = old;
+
+				// some folders become closed when they're renamed
+				ExpandAll();
 			});
 		}
 
