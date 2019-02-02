@@ -20,8 +20,8 @@ namespace CustomTabNames
 			{"ParentDir",      ParentDir},
 			{"Filename",       Filename},
 			{"FullPath",       FullPath},
-			{"FilterPath",     FilterPath},
-			{"ParentFilter",   ParentFilter}
+			{"FolderPath",     FolderPath},
+			{"ParentFolder",   ParentFolder}
 			// update Strings.OptionTemplateDescription when changing this list
 		};
 
@@ -179,25 +179,25 @@ namespace CustomTabNames
 			return d.FullName;
 		}
 
-		// walks the filter up from the document to the project root and joins
+		// walks the folders up from the document to the project root and joins
 		// them with slashes and appends a slash at the end, or returns an empty
 		// string if the document is directly in the project root
 		//
-		public static string FilterPath(Document d)
+		public static string FolderPath(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			return string.Join("/", FilterPathParts(d));
+			return string.Join("/", FolderPathParts(d));
 		}
 
-		// returns the name of the document's parent filter, or an empty string
+		// returns the name of the document's parent folder, or an empty string
 		//
-		public static string ParentFilter(Document d)
+		public static string ParentFolder(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
 			var s = "";
 
-			var parts = FilterPathParts(d);
+			var parts = FolderPathParts(d);
 			if (parts.Count > 0)
 				s = parts[parts.Count - 1];
 
@@ -205,7 +205,7 @@ namespace CustomTabNames
 		}
 
 
-		private static List<string> FilterPathParts(Document d)
+		private static List<string> FolderPathParts(Document d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 

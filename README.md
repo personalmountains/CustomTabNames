@@ -22,11 +22,11 @@ Filename of the document.
 #### `FullPath`
 Full path of the document.
 
-#### `FilterPath`
-All the parent filters ("folders") for the document are joined, separated with `/`. This does not include the project name, nor the filename. Can be empty if the file is directly a child of a project.
+#### `FolderPath`
+All the parent folders for the document are joined, separated with `/`. This uses the folders visible in the Solution Explorer, not the filesystem, although some project types may sync both (like C#). This does not include the project name, nor the filename. Can be empty if the file is directly a child of a project.
 
-#### `ParentFilter`
-Parent filter of the document. Can be empty if the file is directly a child of a project.
+#### `ParentFolder`
+Parent folder of the document in the Solution Explorer. Can be empty if the file is directly a child of a project.
 
 ## Options
 Options are under the item 'CustomTabNames' in the Options dialog.
@@ -49,7 +49,7 @@ If true, a new entry "CustomTabNames" is created in the Output window with logs 
 Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace 4=Variable expansions. Ignored if `Logging` is `false`. Defaults to 2 (Log).
 
 #### Template
-The template string used to generate captions. Defaults to `$(ProjectName ':')$(FilterPath)$(Filename)`.
+The template string used to generate captions. Defaults to `$(ProjectName ':')$(FolderPath)$(Filename)`.
 
 ## Building
 Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `bin/Release/CustomTabNames.vsix`, select the appropriate Visual Studio versions, and install. Tested on 2017 and 2019.

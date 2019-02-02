@@ -476,7 +476,7 @@ namespace CustomTabNames
 
 		// returns whether the given item is any type of folder; note that
 		// some items may return true even if they're not actually folders,
-		// see Variables.FilterPath()
+		// see Variables.FolderPath()
 		//
 		public static bool ItemIsFolder(IVsHierarchy h, uint itemid)
 		{

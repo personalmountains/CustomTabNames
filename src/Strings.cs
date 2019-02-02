@@ -32,7 +32,7 @@
 		public const string OptionTemplate = "Template";
 		public const string OptionTemplateDescription =
 			"Variables: ProjectName, ParentDir, Filename, FullPath, " +
-			"FilterPath, ParentFilter.\r\nText between quotes inside the " +
+			"FolderPath, ParentFolder.\r\nText between quotes inside the " +
 			"variable will only be added if the variable expansion is not " +
 			"empty.";
 

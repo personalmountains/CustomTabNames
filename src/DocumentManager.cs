@@ -7,7 +7,7 @@ namespace CustomTabNames
 	// wraps a Document and a IVsWindowFrame
 	//
 	// the Document is used to feed information to variables, like path and
-	// filters; the IVsWindowFrame is required to set the actual caption
+	// folders; the IVsWindowFrame is required to set the actual caption
 	//
 	public sealed class DocumentWrapper : LoggingContext
 	{
@@ -70,7 +70,7 @@ namespace CustomTabNames
 		public delegate void DocumentChangedHandler(DocumentWrapper d);
 		public event DocumentChangedHandler DocumentChanged;
 
-		// fired when projects or filters are added, removed or renamed
+		// fired when projects or folders are added, removed or renamed
 		//
 		public delegate void ContainersChangedHandler();
 		public event ContainersChangedHandler ContainersChanged;
