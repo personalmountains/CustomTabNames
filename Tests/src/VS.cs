@@ -21,8 +21,8 @@ namespace CustomTabNames.Tests
 
 	public class VS : IDisposable
 	{
-		const bool ShowWindow = true;
-		const bool CloseAfter = false;
+		const bool ShowWindow = false;
+		const bool CloseAfter = true;
 
 		const string ProcessPath =
 			@"C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\" +
@@ -64,7 +64,7 @@ namespace CustomTabNames.Tests
 			if (dte == null)
 				throw new Failed("timed out while waiting for process");
 
-			dte.MainWindow.Visible = true;
+			dte.MainWindow.Visible = false;
 
 			dte.Solution.Close();
 			dte.Solution.Open(solutionPath);
