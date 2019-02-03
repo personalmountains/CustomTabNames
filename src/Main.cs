@@ -12,8 +12,8 @@
 		private bool started = false;
 
 		public Main(
-			IOptionsBackend o,
-			ILogger logger, ISolution solution, DocumentManager dm)
+			IOptionsBackend o, ILoggerBackend logger,
+			ISolution solution, DocumentManager dm)
 		{
 			Instance = this;
 

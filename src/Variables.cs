@@ -219,32 +219,6 @@ namespace CustomTabNames
 				item = parent;
 			}
 
-
-			if (d?.Project?.IsBuiltIn ?? false)
-			{
-				// sigh
-				//
-				// some of the built-in projects like miscellaneous items seem
-				// to behave both as projects and folders
-				//
-				// the ItemIsFolder() call above checks for physical/virtual
-				// folders and works fine for regular projects, where the root
-				// project item doesn't say it's a folder (cause it ain't)
-				//
-				// but when an external file is opened, it gets put in this
-				// magic miscellaneous items project, which _does_ report its
-				// type as a virtual folder, event though it's the root
-				// "project"
-				//
-				// in any case, if the document is in a built-in project, the
-				// first component is removed, because there doesn't seem to be
-				// any way to figure out whether that node is a project or an
-				// actual folder
-
-				if (parts.Count > 0)
-					parts.RemoveAt(0);
-			}
-
 			return parts;
 		}
 

@@ -8,7 +8,7 @@ namespace CustomTabNames
 	{
 		// built-in projects that can be ignored
 		//
-		private static readonly List<string> BuiltinProjects = new List<string>()
+		private static readonly List<string> Builtins = new List<string>()
 		{
 			Constants.vsProjectKindMisc,
 			Constants.vsProjectKindSolutionItems,
@@ -41,7 +41,7 @@ namespace CustomTabNames
 				if (k == null)
 					return false;
 
-				return BuiltinProjects.Contains(k);
+				return Builtins.Contains(k);
 			}
 		}
 	}

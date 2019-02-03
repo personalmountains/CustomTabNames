@@ -6,14 +6,14 @@ namespace CustomTabNames
 {
 	public class VSTreeItem : LoggingContext, ITreeItem
 	{
-		private readonly IVsHierarchy h;
-		private readonly uint id;
+		private const uint RootID = (uint)VSConstants.VSITEMID.Root;
+		public IVsHierarchy Hierarchy { get; private set; }
+		public uint ID { get; private set; }
 
-		public VSTreeItem(
-			IVsHierarchy h, uint id = (uint)VSConstants.VSITEMID.Root)
+		public VSTreeItem(IVsHierarchy h, uint id=RootID)
 		{
-			this.h = h;
-			this.id = id;
+			Hierarchy = h;
+			ID = id;
 		}
 
 		protected override string LogPrefix()
@@ -28,8 +28,8 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				var e = h.GetProperty(
-					id, (int)__VSHPROPID.VSHPROPID_Name,
+				var e = Hierarchy.GetProperty(
+					ID, (int)__VSHPROPID.VSHPROPID_Name,
 					out var name);
 
 				if (e != VSConstants.S_OK || !(name is string))
@@ -48,12 +48,12 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				var e = h.GetProperty(
-					id, (int)__VSHPROPID.VSHPROPID_Parent,
+				var e = Hierarchy.GetProperty(
+					ID, (int)__VSHPROPID.VSHPROPID_Parent,
 					out var pidObject);
 
-				// for whatever reason, VSHPROPID_Parent returns an int instead of
-				// a uint
+				// for whatever reason, VSHPROPID_Parent returns an int instead
+				// of a uint
 
 				if (e != VSConstants.S_OK || !(pidObject is int))
 				{
@@ -68,7 +68,7 @@ namespace CustomTabNames
 					return null;
 				}
 
-				return new VSTreeItem(h, pid);
+				return new VSTreeItem(Hierarchy, pid);
 			}
 		}
 
@@ -81,7 +81,28 @@ namespace CustomTabNames
 			get
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
-				return GetIsFolder(h, id);
+
+				if (GetIsFolder(Hierarchy, ID))
+				{
+					// sigh
+					//
+					// some of the built-in projects like miscellaneous items
+					// seem to behave both as projects and folders
+					//
+					// the GetIsFolder() check above checks for physical/virtual
+					// folders and works fine for regular projects, where the
+					// root project item doesn't say it's a folder (cause it
+					// ain't)
+					//
+					// but when an external file is opened, it gets put in this
+					// magic miscellaneous items project, which _does_ report
+					// its type as a virtual folder, event though it's the root
+					// "project"
+					if (ID != RootID)
+						return true;
+				}
+
+				return false;
 			}
 		}
 
@@ -92,12 +113,11 @@ namespace CustomTabNames
 			get
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
-				return MakeDebugName(Hierarchy, id);
+				return MakeDebugName(Hierarchy, ID);
 			}
 		}
 
-		public static string MakeDebugName(
-			IVsHierarchy h, uint id = (uint)VSConstants.VSITEMID.Root)
+		public static string MakeDebugName(IVsHierarchy h, uint id= RootID)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -133,8 +153,7 @@ namespace CustomTabNames
 			return "?";
 		}
 
-		public static bool GetIsFolder(
-			IVsHierarchy h, uint id = (uint)VSConstants.VSITEMID.Root)
+		public static bool GetIsFolder(IVsHierarchy h, uint id=RootID)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 
@@ -156,14 +175,6 @@ namespace CustomTabNames
 				return true;
 
 			return false;
-		}
-
-		public IVsHierarchy Hierarchy
-		{
-			get
-			{
-				return h;
-			}
 		}
 	}
 }

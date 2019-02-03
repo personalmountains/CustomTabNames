@@ -15,17 +15,23 @@ namespace CustomTabNames
 	// ComVisible(true) allows these options to be accessed by automation
 	// through DTE.Properties, which is used by tests
 	//
+	// see IOptionsBackend for details on the Action<string> callback
+	//
 	[DesignerCategory("")]
 	[ComVisible(true)]
 	public class VSOptions : DialogPage, IOptionsBackend
 	{
 		private Action<string> callback;
+
 		private bool enabled = Options.Defaults.Enabled;
 		private string template = Options.Defaults.Template;
-		private bool ignoreBuiltinProjects = Options.Defaults.IgnoreBuiltinProjects;
-		private bool ignoreSingleProject = Options.Defaults.IgnoreSingleProject;
+		private bool ignoreBuiltinProjects =
+			Options.Defaults.IgnoreBuiltinProjects;
+		private bool ignoreSingleProject =
+			Options.Defaults.IgnoreSingleProject;
 		private bool logging = Options.Defaults.Logging;
 		private int loggingLevel = Options.Defaults.LoggingLevel;
+
 
 		public void RegisterCallback(Action<string> a)
 		{

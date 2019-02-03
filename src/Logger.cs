@@ -2,7 +2,7 @@
 
 namespace CustomTabNames
 {
-	public interface ILogger
+	public interface ILoggerBackend
 	{
 		void Output(string s);
 	}
@@ -13,11 +13,11 @@ namespace CustomTabNames
 	//
 	public class Logger
 	{
-		private readonly ILogger impl;
+		public ILoggerBackend Backend { get; private set; }
 
-		public Logger(ILogger impl)
+		public Logger(ILoggerBackend backend)
 		{
-			this.impl = impl;
+			Backend = backend;
 		}
 
 		// logs the given string by calling String.Format()
@@ -82,7 +82,7 @@ namespace CustomTabNames
 			if (level >= 0 && level > Main.Instance.Options.LoggingLevel)
 				return;
 
-			impl.Output(SafeFormat(format, args));
+			Backend.Output(SafeFormat(format, args));
 		}
 
 		public static string SafeFormat(string format, object[] args)

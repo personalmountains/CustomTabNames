@@ -3,6 +3,13 @@ using System.Collections.Generic;
 
 namespace CustomTabNames
 {
+	// the options backend is a bit messy because VSOptions already inherits
+	// from DialogPage, so it has to use an interface
+	//
+	// the given callback will be fired when any option changes, passing a
+	// string identical to the property name, which is switched on in
+	// Options.OnOptionChanged to fire the proper event
+	//
 	public interface IOptionsBackend
 	{
 		bool Enabled { get; set; }

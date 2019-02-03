@@ -4,7 +4,7 @@ using System;
 
 namespace CustomTabNames
 {
-	public class VSLogger : ILogger
+	public class VSLogger : ILoggerBackend
 	{
 		// output pane
 		private IVsOutputWindowPane pane = null;
@@ -38,7 +38,7 @@ namespace CustomTabNames
 
 			// create a new pane for this extension; this adds an entry in the
 			// "show output from" combo box
-			var guid = new System.Guid(Strings.ExtensionGuid);
+			var guid = new Guid(Strings.ExtensionGuid);
 			w.CreatePane(
 				ref guid, Strings.ExtensionName,
 				Convert.ToInt32(true), Convert.ToInt32(false));

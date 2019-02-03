@@ -69,8 +69,8 @@ namespace CustomTabNames
 					return list;
 				}
 
-				// will store one hierarchy at a time, but Next() still requires an
-				// array
+				// will store one hierarchy at a time, but Next() still requires
+				// an array
 				IVsHierarchy[] hierarchies = new IVsHierarchy[1] { null };
 
 				enumerator.Reset();
@@ -116,11 +116,11 @@ namespace CustomTabNames
 				ThreadHelper.ThrowIfNotOnUIThread();
 
 				var list = new List<IDocument>();
+				var RDT = Package.Instance.RDT;
+				var RDT4 = Package.Instance.RDT4;
 
 				// getting enumerator
-				var e = Package.Instance.RDT.GetRunningDocumentsEnum(
-					out var enumerator);
-
+				var e = RDT.GetRunningDocumentsEnum(out var enumerator);
 				if (e != VSConstants.S_OK)
 				{
 					ErrorCode(
@@ -161,8 +161,9 @@ namespace CustomTabNames
 						continue;
 					}
 
-					var flags = Package.Instance.RDT4.GetDocumentFlags(cookie);
-					const uint Pending = (uint)_VSRDTFLAGS4.RDT_PendingInitialization;
+					var flags = RDT4.GetDocumentFlags(cookie);
+					const uint Pending = (uint)_VSRDTFLAGS4
+						.RDT_PendingInitialization;
 
 					if ((flags & Pending) != 0)
 					{
@@ -174,29 +175,28 @@ namespace CustomTabNames
 					var d = VSDocument.DocumentFromCookie(cookie);
 					if (d == null)
 					{
-						var mk = Package.Instance.RDT4.GetDocumentMoniker(cookie);
+						var mk = RDT4.GetDocumentMoniker(cookie);
 						Trace("  . {0} no document ({1})", cookie, mk);
 
-						// GetRunningDocumentsEnum() enumerates all sorts of stuff
-						// that are not documents, like the project files, even the
-						// .sln file; all of those return null here, so they can
-						// be safely ignored
+						// GetRunningDocumentsEnum() enumerates all sorts of
+						// stuff that are not documents, like the project files,
+						// even the .sln file; all of those return null here,
+						// so they can be safely ignored
 						continue;
 					}
 
 					var wf = VSDocument.WindowFrameFromDocument(d);
 					if (wf == null)
 					{
-						// this seems to happen for documents that haven't loaded
-						// yet, they should get picked up by
-						// DocumentEventHandlers.OnBeforeDocumentWindowShow later
+						// this seems to happen for documents that haven't
+						// loaded yet, they should get picked up by
+						// DocumentEventHandlers.OnBeforeDocumentWindowShow
+						// later
 						Trace("  . {0} no frame ({1})", cookie, d.FullName);
-
 						continue;
 					}
 
 					Trace("  . {0} ok ({1})", cookie, d.FullName);
-
 					list.Add(new VSDocument(d));
 				}
 
