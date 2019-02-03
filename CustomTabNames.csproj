@@ -57,6 +57,7 @@
     <Compile Include="src\Strings.cs" />
     <Compile Include="src\Utilities.cs" />
     <Compile Include="src\Variables.cs" />
+    <Compile Include="src\Wrappers.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="source.extension.vsixmanifest">

@@ -4,56 +4,6 @@ using EnvDTE;
 
 namespace CustomTabNames
 {
-	// wraps a Document and a IVsWindowFrame
-	//
-	// the Document is used to feed information to variables, like path and
-	// folders; the IVsWindowFrame is required to set the actual caption
-	//
-	public sealed class DocumentWrapper : LoggingContext
-	{
-		public Document Document { get; private set; }
-		private IVsWindowFrame Frame { get; set; }
-
-		protected override string LogPrefix()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			return "DocumentWrapper " + Document.FullName;
-		}
-
-		public DocumentWrapper(Document d, IVsWindowFrame f)
-		{
-			Document = d;
-			Frame = f;
-		}
-
-		// sets the caption of this document to the given string
-		//
-		public void SetCaption(string s)
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			Log("setting to {0}", s);
-
-			// the visible caption is made of a combination of the EditorCaption
-			// and OwnerCaption; setting the EditorCaption to null makes sure
-			// the caption can be controlled uniquely by OwnerCaption
-			Frame.SetProperty((int)VsFramePropID.EditorCaption, null);
-			Frame.SetProperty((int)VsFramePropID.OwnerCaption, s);
-		}
-
-		// resets the caption of this document to the default value
-		//
-		public void ResetCaption()
-		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			Log("resetting to {0}", Document.Name);
-
-			SetCaption(Document.Name);
-		}
-	}
-
-
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do
 	//
@@ -67,7 +17,7 @@ namespace CustomTabNames
 
 		// fired every time a document changes in a way that may require
 		// fixing the caption
-		public delegate void DocumentChangedHandler(DocumentWrapper d);
+		public delegate void DocumentChangedHandler(IDocument d);
 		public event DocumentChangedHandler DocumentChanged;
 
 		// fired when projects or folders are added, removed or renamed
@@ -135,46 +85,46 @@ namespace CustomTabNames
 		}
 
 
-		private void OnProjectAdded(IVsHierarchy h)
+		private void OnProjectAdded(ITreeItem i)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("project {0} added", Utilities.DebugHierarchyName(h));
+			Trace("project {0} added", i.DebugName);
 			ContainersChanged?.Invoke();
 		}
 
-		private void OnProjectRemoved(IVsHierarchy h)
+		private void OnProjectRemoved(ITreeItem i)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("project {0} removed", Utilities.DebugHierarchyName(h));
+			Trace("project {0} removed", i.DebugName);
 			ContainersChanged?.Invoke();
 		}
 
-		private void OnProjectRenamed(IVsHierarchy h)
+		private void OnProjectRenamed(ITreeItem i)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("project {0} renamed", Utilities.DebugHierarchyName(h));
+			Trace("project {0} renamed", i.DebugName);
 			ContainersChanged?.Invoke();
 		}
 
-		private void OnFolderRenamed(IVsHierarchy h, uint item)
+		private void OnFolderRenamed(ITreeItem i)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("folder {0} renamed", Utilities.DebugHierarchyName(h, item));
+			Trace("folder {0} renamed", i.DebugName);
 			ContainersChanged?.Invoke();
 		}
 
-		private void OnDocumentRenamed(Document d, IVsWindowFrame wf)
+		private void OnDocumentRenamed(IDocument d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("document {0} renamed", d.FullName);
-			DocumentChanged?.Invoke(new DocumentWrapper(d, wf));
+			Trace("document {0} renamed", d.Path);
+			DocumentChanged?.Invoke(d);
 		}
 
-		private void OnDocumentOpened(Document d, IVsWindowFrame wf)
+		private void OnDocumentOpened(IDocument d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			Trace("document {0} opened", d.FullName);
-			DocumentChanged?.Invoke(new DocumentWrapper(d, wf));
+			Trace("document {0} opened", d.Path);
+			DocumentChanged?.Invoke(d);
 		}
 	}
 }

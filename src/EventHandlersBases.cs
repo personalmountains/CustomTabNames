@@ -52,9 +52,9 @@ namespace CustomTabNames
 
 	public abstract class EventHandlersBase : LoggingContext
 	{
-		public delegate void ProjectHandler(IVsHierarchy h);
-		public delegate void FolderHandler(IVsHierarchy h, uint item);
-		public delegate void DocumentHandler(Document d, IVsWindowFrame wf);
+		public delegate void ProjectHandler(ITreeItem h);
+		public delegate void FolderHandler(ITreeItem h);
+		public delegate void DocumentHandler(IDocument d);
 	}
 
 

@@ -100,7 +100,7 @@ namespace CustomTabNames
 
 			if (Utilities.ItemIsFolder(Hierarchy, item))
 			{
-				FolderRenamed?.Invoke(Hierarchy, item);
+				FolderRenamed?.Invoke(new VSTreeItem(Hierarchy, item));
 			}
 			else
 			{
@@ -113,14 +113,7 @@ namespace CustomTabNames
 					return VSConstants.S_OK;
 				}
 
-				var wf = Utilities.WindowFrameFromDocument(d);
-				if (wf == null)
-				{
-					Error("OnItemAdded: no window frame");
-					return VSConstants.S_OK;
-				}
-
-				DocumentRenamed?.Invoke(d, wf);
+				DocumentRenamed?.Invoke(new VSDocument(d));
 			}
 
 			return VSConstants.S_OK;
@@ -162,12 +155,12 @@ namespace CustomTabNames
 			if (item == (uint)VSConstants.VSITEMID.Root)
 			{
 				// itemid of root means this is a project
-				ProjectRenamed?.Invoke(Hierarchy);
+				ProjectRenamed?.Invoke(new VSTreeItem(Hierarchy, item));
 			}
 			else if (Utilities.ItemIsFolder(Hierarchy, item))
 			{
 				// this is a C++ folder
-				FolderRenamed?.Invoke(Hierarchy, item);
+				FolderRenamed?.Invoke(new VSTreeItem(Hierarchy, item));
 			}
 
 			return VSConstants.S_OK;

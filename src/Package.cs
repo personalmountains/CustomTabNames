@@ -37,8 +37,13 @@ namespace CustomTabNames
 
 		public DocumentManager DocumentManager { get; private set; }
 
+		// logger
+		public Logger Logger { get; private set; }
+
 		// options
 		public Options Options { get; private set; }
+
+		public ISolution Solution { get; private set; }
 
 		// whether Start() has already been called
 		private bool started = false;
@@ -72,12 +77,14 @@ namespace CustomTabNames
 		{
 			await JoinableTaskFactory.SwitchToMainThreadAsync(ct);
 
-			if (Solution == null || RDT == null)
+			if (SolutionService == null || RDT == null)
 			{
 				Logger.Error("bailing out");
 				return;
 			}
 
+			Logger = new Logger(new VSLogger());
+			Solution = new VSSolution();
 			Options = (Options)GetDialogPage(typeof(Options));
 			DocumentManager = new DocumentManager();
 
@@ -140,7 +147,7 @@ namespace CustomTabNames
 			ResetAllDocuments();
 		}
 
-		public IVsSolution Solution
+		public IVsSolution SolutionService
 		{
 			get
 			{
@@ -241,7 +248,7 @@ namespace CustomTabNames
 				Stop();
 		}
 
-		// fired when the ignore builtin projects option changed, fixes all
+		// fired when the ignore built-in projects option changed, fixes all
 		// currently opened documents
 		//
 		private void OnIgnoreBuiltinProjectsChanged()
@@ -251,7 +258,7 @@ namespace CustomTabNames
 			if (!Options.Enabled)
 				return;
 
-			Logger.Log("ignore builtin projects option changed");
+			Logger.Log("ignore built-in projects option changed");
 			FixAllDocuments();
 		}
 
@@ -281,7 +288,7 @@ namespace CustomTabNames
 
 		// fired when a document or window has been opened
 		//
-		private void OnDocumentChanged(DocumentWrapper d)
+		private void OnDocumentChanged(IDocument d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
 			FixCaption(d);
@@ -304,10 +311,10 @@ namespace CustomTabNames
 
 			try
 			{
-				Utilities.ForEachDocument((d) =>
+				foreach (var d in Solution.Documents)
 				{
 					FixCaption(d);
-				});
+				}
 			}
 			catch (COMException e)
 			{
@@ -345,11 +352,11 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Logger.Log("reseting all documents");
 
-			Utilities.ForEachDocument((d) =>
+			foreach (var d in Solution.Documents)
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 				d.ResetCaption();
-			});
+			}
 		}
 
 		// called on each document by FixAllDocuments() and on documents given
@@ -359,10 +366,10 @@ namespace CustomTabNames
 		//
 		// may fail if the document doesn't have a frame yet
 		//
-		private void FixCaption(DocumentWrapper d)
+		private void FixCaption(IDocument d)
 		{
 			ThreadHelper.ThrowIfNotOnUIThread();
-			d.SetCaption(Variables.Expand(d.Document, Options.Template));
+			d.SetCaption(Variables.Expand(d, Options.Template));
 		}
 	}
 }

@@ -7,7 +7,7 @@ namespace CustomTabNames.Tests
 {
 	public class ScopedAction : IDisposable
 	{
-		private Action action;
+		private readonly Action action;
 
 		public ScopedAction(Action a)
 		{

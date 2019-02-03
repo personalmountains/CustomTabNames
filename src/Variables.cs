@@ -7,7 +7,7 @@ using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
 {
-	using Dict = Dictionary<string, Func<Document, string>>;
+	using Dict = Dictionary<string, Func<IDocument, string>>;
 
 	public sealed class Variables
 	{
@@ -34,13 +34,19 @@ namespace CustomTabNames
 			}
 		}
 
+		private static Logger Logger
+		{
+			get
+			{
+				return Logger.Instance;
+			}
+		}
+
 
 		// expands all variables on the given template
 		//
-		public static string Expand(Document d, string template)
+		public static string Expand(IDocument d, string template)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
 			string s = template;
 
 			// matches $(VariableName 'text') where 'text' is optional
@@ -50,7 +56,7 @@ namespace CustomTabNames
 
 			Logger.VariableTrace(
 				"making caption for {0} using template {1}",
-				d.FullName, s);
+				d.Path, s);
 
 			while (true)
 			{
@@ -72,10 +78,8 @@ namespace CustomTabNames
 
 		// returns the expansion of variable 'name' with option text
 		//
-		private static string ExpandOne(Document d, string name, string text)
+		private static string ExpandOne(IDocument d, string name, string text)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
 			if (Dictionary.TryGetValue(name, out var v))
 			{
 				// variable is in the dictionary
@@ -121,23 +125,21 @@ namespace CustomTabNames
 		// returns the name of the document's project, or an empty string; this
 		// can happen for external files, includes, etc.
 		//
-		public static string ProjectName(Document d)
+		public static string ProjectName(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
 			if (Options.IgnoreSingleProject)
 			{
-				if (Utilities.HasSingleProject())
+				if (Package.Instance.Solution.HasSingleProject)
 					return "";
 			}
 
 			if (Options.IgnoreBuiltinProjects)
 			{
-				if (Utilities.IsInBuiltinProject(d))
+				if (d.Project?.IsBuiltIn ?? false)
 					return "";
 			}
 
-			var p = d?.ProjectItem?.ContainingProject;
+			var p = d?.Project;
 			if (p == null)
 				return "";
 
@@ -147,11 +149,9 @@ namespace CustomTabNames
 		// returns the parent directory of the document's file with a slash at
 		// the end, or an empty string; this happens for files in the root
 		//
-		public static string ParentDir(Document d)
+		public static string ParentDir(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var parts = Utilities.SplitPath(d.FullName);
+			var parts = Utilities.SplitPath(d.Path);
 			if (parts.Length < 2)
 				return "";
 
@@ -160,11 +160,9 @@ namespace CustomTabNames
 
 		// returns the last component of the full path, or an empty string
 		//
-		public static string Filename(Document d)
+		public static string Filename(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
-			var parts = Utilities.SplitPath(d.FullName);
+			var parts = Utilities.SplitPath(d.Path);
 			if (parts.Length == 0)
 				return "";
 
@@ -173,28 +171,24 @@ namespace CustomTabNames
 
 		// returns the full path of the document
 		//
-		public static string FullPath(Document d)
+		public static string FullPath(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-			return d.FullName;
+			return d.Path;
 		}
 
 		// walks the folders up from the document to the project root and joins
 		// them with slashes and appends a slash at the end, or returns an empty
 		// string if the document is directly in the project root
 		//
-		public static string FolderPath(Document d)
+		public static string FolderPath(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
 			return string.Join("/", FolderPathParts(d));
 		}
 
 		// returns the name of the document's parent folder, or an empty string
 		//
-		public static string ParentFolder(Document d)
+		public static string ParentFolder(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
 			var s = "";
 
 			var parts = FolderPathParts(d);
@@ -205,41 +199,34 @@ namespace CustomTabNames
 		}
 
 
-		private static List<string> FolderPathParts(Document d)
+		private static List<string> FolderPathParts(IDocument d)
 		{
-			ThreadHelper.ThrowIfNotOnUIThread();
-
 			var parts = new List<string>();
 
-			if (!Utilities.ItemIDFromDocument(d, out var h, out var id))
-				return parts;
+			var item = d.TreeItem;
 
-			while (id != (uint)VSConstants.VSITEMID.Nil)
+			while (item != null)
 			{
-				if (!Utilities.ParentItemID(h, id, out var pid))
+				var parent = item.Parent;
+				if (parent == null)
 					break;
 
-				// no more parent
-				if (pid == (uint)VSConstants.VSITEMID.Nil)
-					break;
-
-				if (Utilities.ItemIsFolder(h, pid))
+				if (parent.IsFolder)
 				{
-					var name = Utilities.ItemName(h, pid);
-
+					var name = parent.Name;
 					if (name != null)
 						parts.Insert(0, name);
 				}
 
-				id = pid;
+				item = parent;
 			}
 
 
-			if (Utilities.IsInBuiltinProject(d))
+			if (d?.Project?.IsBuiltIn ?? false)
 			{
 				// sigh
 				//
-				// some of the builtin projects like miscellaneous items seem
+				// some of the built-in projects like miscellaneous items seem
 				// to behave both as projects and folders
 				//
 				// the ItemIsFolder() call above checks for physical/virtual
@@ -251,7 +238,7 @@ namespace CustomTabNames
 				// type as a virtual folder, event though it's the root
 				// "project"
 				//
-				// in any case, if the document is in a builtin project, the
+				// in any case, if the document is in a built-in project, the
 				// first component is removed, because there doesn't seem to be
 				// any way to figure out whether that node is a project or an
 				// actual folder

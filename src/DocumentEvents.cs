@@ -85,7 +85,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			DocumentOpened?.Invoke(d, wf);
+			DocumentOpened?.Invoke(new VSDocument(d, wf));
 
 			return VSConstants.S_OK;
 		}
@@ -132,14 +132,7 @@ namespace CustomTabNames
 				return VSConstants.S_OK;
 			}
 
-			var wf = Utilities.WindowFrameFromDocument(d);
-			if (wf == null)
-			{
-				Error("OnAfterAttributeChangeEx rename: no window frame");
-				return VSConstants.S_OK;
-			}
-
-			DocumentRenamed?.Invoke(d, wf);
+			DocumentRenamed?.Invoke(new VSDocument(d));
 
 			return VSConstants.S_OK;
 		}

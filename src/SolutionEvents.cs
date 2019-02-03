@@ -45,7 +45,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("registering for events");
 
-			var e = Package.Instance.Solution
+			var e = Package.Instance.SolutionService
 				.AdviseSolutionEvents(this, out cookie);
 
 			if (e != VSConstants.S_OK)
@@ -59,10 +59,10 @@ namespace CustomTabNames
 			// go through every loaded project and register for hierarchy
 			// events; this handles cases where the extension was loaded after
 			// the current solution
-			Utilities.ForEachProjectHierarchy((h) =>
+			foreach (var p in Package.Instance.Solution.ProjectItems)
 			{
-				AddProjectHierarchy(h);
-			});
+				AddProjectHierarchy(((VSTreeItem)p).Hierarchy);
+			}
 		}
 
 		// unregisters from solution events
@@ -85,7 +85,9 @@ namespace CustomTabNames
 				return;
 			}
 
-			var e = Package.Instance.Solution.UnadviseSolutionEvents(cookie);
+			var e = Package.Instance.SolutionService
+				.UnadviseSolutionEvents(cookie);
+
 			if (e != VSConstants.S_OK)
 				ErrorCode(e, "UnadviseSolutionEvents() failed");
 		}
@@ -112,7 +114,7 @@ namespace CustomTabNames
 			AddProjectHierarchy(hierarchy);
 
 			if (added != 0)
-				ProjectAdded?.Invoke(hierarchy);
+				ProjectAdded?.Invoke(new VSTreeItem(hierarchy));
 
 			return VSConstants.S_OK;
 		}
@@ -157,7 +159,7 @@ namespace CustomTabNames
 			projectCloseTimer.Start(1000, () =>
 			{
 				Trace("projectCloseTimer fired");
-				ProjectRemoved?.Invoke(hierarchy);
+				ProjectRemoved?.Invoke(new VSTreeItem(hierarchy));
 			});
 
 			return VSConstants.S_OK;

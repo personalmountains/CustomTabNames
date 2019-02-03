@@ -52,8 +52,8 @@ namespace CustomTabNames.Tests
 
 	public class Tests
 	{
-		private Operations ops;
-		private string project, filename, p;
+		private readonly Operations ops;
+		private readonly string project, filename, p;
 		private Window file;
 
 		public Tests(string projectName, string filename)
