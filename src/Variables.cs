@@ -153,7 +153,31 @@ namespace CustomTabNames
 				Path.DirectorySeparatorChar,
 				Path.AltDirectorySeparatorChar };
 
-			return path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+			var cs = path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+
+			if (cs.Length > 0)
+			{
+				if (IsDriveLetter(cs[0]))
+				{
+					var list = new List<string>(cs);
+					list.RemoveAt(0);
+					cs = list.ToArray();
+				}
+			}
+
+			return cs;
+		}
+
+		public static bool IsDriveLetter(string s)
+		{
+			if (s.Length != 2 || s[1] != ':')
+				return false;
+
+			var d = s[0];
+			if ((d >= 'a' && d <= 'z') || (d >= 'A' && d <= 'Z'))
+				return true;
+
+			return false;
 		}
 	}
 

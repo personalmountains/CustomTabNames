@@ -99,7 +99,8 @@ namespace CustomTabNames.Tests
 		}
 
 		public TestDocument(
-			string path, string name, IProject project, ITreeItem treeItem)
+			string path = "", string name = "",
+			IProject project = null, ITreeItem treeItem = null)
 		{
 			this.path = path;
 			this.name = name;
@@ -150,5 +151,22 @@ namespace CustomTabNames.Tests
 		{
 			caption = s;
 		}
+	}
+
+	public class TestTreeItem : ITreeItem
+	{
+		public TestTreeItem(
+			string name = "", ITreeItem parent = null,
+			bool isFolder = false)
+		{
+			Name = name;
+			Parent = parent;
+			IsFolder = isFolder;
+		}
+
+		public string Name { get; }
+		public ITreeItem Parent { get; }
+		public bool IsFolder { get; }
+		public string DebugName { get; }
 	}
 }
