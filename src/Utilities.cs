@@ -61,7 +61,7 @@ namespace CustomTabNames
 		{
 			get
 			{
-				return Logger.Instance;
+				return Main.Instance.Logger;
 			}
 		}
 
@@ -266,18 +266,25 @@ namespace CustomTabNames
 
 			var e = h.GetProperty(
 				itemid, (int)__VSHPROPID.VSHPROPID_Parent,
-				out var pid);
+				out var pidObject);
 
 			// for whatever reason, VSHPROPID_Parent returns an int instead of
 			// a uint
 
-			if (e != VSConstants.S_OK || !(pid is int))
+			if (e != VSConstants.S_OK || !(pidObject is int))
 			{
 				Logger.ErrorCode(e, "can't get parent item", itemid);
 				return false;
 			}
 
-			parentItemid = (uint)(int)pid;
+			var pid = (uint)(int)pidObject;
+			if (pid == (uint)VSConstants.VSITEMID.Nil)
+			{
+				// no parent
+				return false;
+			}
+
+			parentItemid = pid;
 			return true;
 		}
 

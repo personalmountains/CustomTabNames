@@ -16,12 +16,10 @@ namespace CustomTabNames
 	//
 	public class Logger
 	{
-		public static Logger Instance { get; private set; }
 		private readonly ILogger impl;
 
 		public Logger(ILogger impl)
 		{
-			Instance = this;
 			this.impl = impl;
 		}
 
@@ -79,12 +77,12 @@ namespace CustomTabNames
 		private void LogImpl(int level, string format, object[] args)
 		{
 			// don't do anything if logging is disabled
-			if (!Package.Instance.Options.Logging)
+			if (!Main.Instance.Options.Logging)
 				return;
 
 			// don't log if level is too high, always log if level is -1,
 			// see LogAlways()
-			if (level >= 0 && level > Package.Instance.Options.LoggingLevel)
+			if (level >= 0 && level > Main.Instance.Options.LoggingLevel)
 				return;
 
 			impl.Output(SafeFormat(format, args));
@@ -110,38 +108,31 @@ namespace CustomTabNames
 
 	public abstract class LoggingContext
 	{
-		private readonly Logger lg;
-
-		public LoggingContext()
-		{
-			this.lg = Logger.Instance;
-		}
-
 		protected abstract string LogPrefix();
 
 		public void Error(string format, params object[] args)
 		{
-			lg.Error("{0}", MakeString(format, args));
+			Main.Instance.Logger.Error("{0}", MakeString(format, args));
 		}
 
 		public void ErrorCode(int e, string format, params object[] args)
 		{
-			lg.ErrorCode(e, "{0}", MakeString(format, args));
+			Main.Instance.Logger.ErrorCode(e, "{0}", MakeString(format, args));
 		}
 
 		public void Warn(string format, params object[] args)
 		{
-			lg.Warn("{0}", MakeString(format, args));
+			Main.Instance.Logger.Warn("{0}", MakeString(format, args));
 		}
 
 		public void Log(string format, params object[] args)
 		{
-			lg.Log("{0}", MakeString(format, args));
+			Main.Instance.Logger.Log("{0}", MakeString(format, args));
 		}
 
 		public void Trace(string format, params object[] args)
 		{
-			lg.Trace("{0}", MakeString(format, args));
+			Main.Instance.Logger.Trace("{0}", MakeString(format, args));
 		}
 
 		private string MakeString(string format, object[] args)

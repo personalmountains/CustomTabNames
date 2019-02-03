@@ -30,7 +30,7 @@ namespace CustomTabNames
 		{
 			get
 			{
-				return Package.Instance.Options;
+				return Main.Instance.Options;
 			}
 		}
 
@@ -38,7 +38,7 @@ namespace CustomTabNames
 		{
 			get
 			{
-				return Logger.Instance;
+				return Main.Instance.Logger;
 			}
 		}
 
@@ -129,7 +129,7 @@ namespace CustomTabNames
 		{
 			if (Options.IgnoreSingleProject)
 			{
-				if (Package.Instance.Solution.HasSingleProject)
+				if (Main.Instance.Solution.HasSingleProject)
 					return "";
 			}
 

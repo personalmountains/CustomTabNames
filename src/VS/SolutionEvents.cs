@@ -59,7 +59,7 @@ namespace CustomTabNames
 			// go through every loaded project and register for hierarchy
 			// events; this handles cases where the extension was loaded after
 			// the current solution
-			foreach (var p in Package.Instance.Solution.ProjectItems)
+			foreach (var p in Main.Instance.Solution.ProjectItems)
 			{
 				AddProjectHierarchy(((VSTreeItem)p).Hierarchy);
 			}

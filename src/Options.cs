@@ -1,25 +1,23 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Runtime.InteropServices;
-using Microsoft.VisualStudio.Shell;
+using System.Diagnostics;
 
 namespace CustomTabNames
 {
-	// stores all options and provides a DialogPage that can be displayed in
-	// the options dialog
-	//
-	// DesignerCategory("") is because Visual Studio keeps trying to show a
-	// designer window for this on double-click, but it gives errors and is
-	// useless in any case; this forces a code view
-	//
-	// ComVisible(true) allows these options to be accessed by automation
-	// through DTE.Properties, which is used by tests
-	//
-	[System.ComponentModel.DesignerCategory("")]
-	[ComVisible(true)]
-	public class Options : DialogPage
+	public interface IOptionsBackend
 	{
-		struct Defaults
+		bool Enabled { get; set; }
+		string Template { get; set; }
+		bool IgnoreBuiltinProjects { get; set; }
+		bool IgnoreSingleProject { get; set; }
+		bool Logging { get; set; }
+		int LoggingLevel { get; set; }
+		void RegisterCallback(Action<string> a);
+	}
+
+
+	public class Options
+	{
+		public struct Defaults
 		{
 			public const bool Enabled = true;
 			public const string Template =
@@ -30,14 +28,6 @@ namespace CustomTabNames
 			public const int LoggingLevel = 2;
 		}
 
-		private bool enabled = Defaults.Enabled;
-		private string template = Defaults.Template;
-		private bool ignoreBuiltinProjects = Defaults.IgnoreBuiltinProjects;
-		private bool ignoreSingleProject = Defaults.IgnoreSingleProject;
-		private bool logging = Defaults.Logging;
-		private int loggingLevel = Defaults.LoggingLevel;
-
-
 		public delegate void Handler();
 
 		// fired when the various options change
@@ -46,137 +36,124 @@ namespace CustomTabNames
 		public event Handler IgnoreSingleProjectChanged, LoggingChanged;
 		public event Handler LoggingLevelChanged;
 
+		private readonly IOptionsBackend backend;
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionEnabled)]
-		[Description(Strings.OptionEnabledDescription)]
-		[DefaultValue(Defaults.Enabled)]
+
+		public Options(IOptionsBackend b)
+		{
+			backend = b;
+			backend.RegisterCallback(OnOptionChanged);
+		}
+
+		private void OnOptionChanged(string name)
+		{
+			switch (name)
+			{
+				case "Enabled":
+					EnabledChanged?.Invoke();
+					break;
+
+				case "Template":
+					TemplateChanged?.Invoke();
+					break;
+
+				case "IgnoreBuiltinProjects":
+					IgnoreBuiltinProjectsChanged?.Invoke();
+					break;
+
+				case "IgnoreSingleProject":
+					IgnoreSingleProjectChanged?.Invoke();
+					break;
+
+				case "Logging":
+					LoggingChanged?.Invoke();
+					break;
+
+				case "LoggingLevel":
+					LoggingLevelChanged?.Invoke();
+					break;
+
+				default:
+					Debug.Fail("unknown option '" + name + "'");
+					break;
+			}
+		}
+
 		public bool Enabled
 		{
 			get
 			{
-				return enabled;
+				return backend.Enabled;
 			}
 
 			set
 			{
-				if (enabled != value)
-				{
-					enabled = value;
-					EnabledChanged?.Invoke();
-				}
+				backend.Enabled = value;
 			}
 		}
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionTemplate)]
-		[Description(Strings.OptionTemplateDescription)]
-		[DefaultValue(Defaults.Template)]
 		public string Template
 		{
 			get
 			{
-				return template;
+				return backend.Template;
 			}
 
 			set
 			{
-				var v = (value.Length == 0 ? Defaults.Template : value);
-
-				if (template != v)
-				{
-					template = v;
-					TemplateChanged?.Invoke();
-				}
+				backend.Template = value;
 			}
 		}
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionIgnoreBuiltinProjects)]
-		[Description(Strings.OptionIgnoreBuiltinProjectsDescription)]
-		[DefaultValue(Defaults.IgnoreBuiltinProjects)]
 		public bool IgnoreBuiltinProjects
 		{
 			get
 			{
-				return ignoreBuiltinProjects;
+				return backend.IgnoreBuiltinProjects;
 			}
 
 			set
 			{
-				if (ignoreBuiltinProjects != value)
-				{
-					ignoreBuiltinProjects  = value;
-					IgnoreBuiltinProjectsChanged?.Invoke();
-				}
+				backend.IgnoreBuiltinProjects = value;
 			}
 		}
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionIgnoreSingleProject)]
-		[Description(Strings.OptionIgnoreSingleProjectDescription)]
-		[DefaultValue(Defaults.IgnoreSingleProject)]
 		public bool IgnoreSingleProject
 		{
 			get
 			{
-				return ignoreSingleProject;
+				return backend.IgnoreSingleProject;
 			}
 
 			set
 			{
-				if (ignoreSingleProject != value)
-				{
-					ignoreSingleProject = value;
-					IgnoreSingleProjectChanged?.Invoke();
-				}
+				backend.IgnoreSingleProject = value;
 			}
 		}
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionLogging)]
-		[Description(Strings.OptionLoggingDescription)]
-		[DefaultValue(Defaults.Logging)]
 		public bool Logging
 		{
 			get
 			{
-				return logging;
+				return backend.Logging;
 			}
 
 			set
 			{
-				if (logging != value)
-				{
-					logging = value;
-					LoggingChanged?.Invoke();
-				}
+				backend.Logging = value;
 			}
 		}
 
-		[Category(Strings.OptionsCategory)]
-		[DisplayName(Strings.OptionLoggingLevel)]
-		[Description(Strings.OptionLoggingLevelDescription)]
-		[DefaultValue(Defaults.LoggingLevel)]
 		public int LoggingLevel
 		{
 			get
 			{
-				return loggingLevel;
+				return backend.LoggingLevel;
 			}
 
 			set
 			{
-				if (value < 0)
-					value = 0;
-				else if (value > 4)
-					value = 4;
-
-				if (loggingLevel != value)
-				{
-					loggingLevel = value;
-					LoggingLevelChanged?.Invoke();
-				}
+				backend.LoggingLevel = value;
 			}
 		}
 	}
