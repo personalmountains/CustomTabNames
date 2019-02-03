@@ -13,3 +13,4 @@
 /*.user
 /Tests/UnitTests/bin
 /Tests/UnitTests/obj
+/Tests/UnitTests/*.user

@@ -14,7 +14,7 @@ These variables can be used in the template:
 Name of the project that owns the document. Can be empty if the option to ignore single projects is enabled.
 
 #### `ParentDir`
-Name of the parent directory of the document, includes a terminating `/` if not empty.
+Name of the parent directory of the document. Does not include a terminating `/`. Can be empty if in root of filesystem.
 
 #### `Filename`
 Filename of the document.
@@ -23,10 +23,10 @@ Filename of the document.
 Full path of the document.
 
 #### `FolderPath`
-All the parent folders for the document are joined, separated with `/`. This uses the folders visible in the Solution Explorer, not the filesystem, although some project types may sync both (like C#). This does not include the project name, nor the filename. Can be empty if the file is directly a child of a project.
+All the parent folders for the document are joined, separated with `/`. Does not include a terminating `/`. This uses the folders visible in the Solution Explorer, not the filesystem, although some project types may sync both (like C#). This does not include the project name, nor the filename. Can be empty if the file is directly a child of a project.
 
 #### `ParentFolder`
-Parent folder of the document in the Solution Explorer. Can be empty if the file is directly a child of a project.
+Parent folder of the document in the Solution Explorer. Does not include a terminating `/`. Can be empty if the file is directly a child of a project.
 
 ## Options
 Options are under the item 'CustomTabNames' in the Options dialog.

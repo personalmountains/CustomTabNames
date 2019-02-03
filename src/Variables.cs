@@ -118,7 +118,7 @@ namespace CustomTabNames
 	}
 
 
-	class VariableUtilities
+	public class VariableUtilities
 	{
 		public static List<string> FolderPathParts(IDocument d)
 		{
@@ -161,7 +161,7 @@ namespace CustomTabNames
 	// returns the name of the document's project, or an empty string; this
 	// can happen for external files, includes, etc.
 	//
-	class ProjectName : IVariable
+	public class ProjectName : IVariable
 	{
 		public string Expand(IDocument d)
 		{
@@ -189,7 +189,7 @@ namespace CustomTabNames
 	// returns the parent directory of the document's file with a slash at
 	// the end, or an empty string; this happens for files in the root
 	//
-	class ParentDir : IVariable
+	public class ParentDir : IVariable
 	{
 		public string Expand(IDocument d)
 		{
@@ -197,14 +197,14 @@ namespace CustomTabNames
 			if (parts.Length < 2)
 				return "";
 
-			return parts[parts.Length - 2] + "/";
+			return parts[parts.Length - 2];
 		}
 	}
 
 
 	// returns the last component of the full path, or an empty string
 	//
-	class Filename : IVariable
+	public class Filename : IVariable
 	{
 		public string Expand(IDocument d)
 		{
@@ -219,7 +219,7 @@ namespace CustomTabNames
 
 	// returns the full path of the document
 	//
-	class FullPath : IVariable
+	public class FullPath : IVariable
 	{
 		public string Expand(IDocument d)
 		{
@@ -232,7 +232,7 @@ namespace CustomTabNames
 	// them with slashes and appends a slash at the end, or returns an empty
 	// string if the document is directly in the project root
 	//
-	class FolderPath : IVariable
+	public class FolderPath : IVariable
 	{
 		public string Expand(IDocument d)
 		{
@@ -243,7 +243,7 @@ namespace CustomTabNames
 
 	// returns the name of the document's parent folder, or an empty string
 	//
-	class ParentFolder : IVariable
+	public class ParentFolder : IVariable
 	{
 		public string Expand(IDocument d)
 		{
