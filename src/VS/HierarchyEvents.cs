@@ -37,7 +37,7 @@ namespace CustomTabNames
 
 			return
 				"HierarchyEventHandlers " +
-				Utilities.DebugHierarchyName(Hierarchy);
+				VSTreeItem.MakeDebugName(Hierarchy);
 		}
 
 		// registers for events on the project
@@ -98,13 +98,13 @@ namespace CustomTabNames
 			// renaming a file or a folder for C++ projects fires
 			// OnPropertyChanged, which is handled below
 
-			if (Utilities.ItemIsFolder(Hierarchy, item))
+			if (VSTreeItem.GetIsFolder(Hierarchy, item))
 			{
 				FolderRenamed?.Invoke(new VSTreeItem(Hierarchy, item));
 			}
 			else
 			{
-				var d = Utilities.DocumentFromItemID(Hierarchy, item);
+				var d = VSDocument.DocumentFromItemID(Hierarchy, item);
 				if (d == null)
 				{
 					// this happens when renaming C# files for whatever reason,
@@ -157,7 +157,7 @@ namespace CustomTabNames
 				// itemid of root means this is a project
 				ProjectRenamed?.Invoke(new VSTreeItem(Hierarchy, item));
 			}
-			else if (Utilities.ItemIsFolder(Hierarchy, item))
+			else if (VSTreeItem.GetIsFolder(Hierarchy, item))
 			{
 				// this is a C++ folder
 				FolderRenamed?.Invoke(new VSTreeItem(Hierarchy, item));

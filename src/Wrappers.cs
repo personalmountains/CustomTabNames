@@ -1,7 +1,19 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CustomTabNames
 {
+	public interface IOptionsBackend
+	{
+		bool Enabled { get; set; }
+		string Template { get; set; }
+		bool IgnoreBuiltinProjects { get; set; }
+		bool IgnoreSingleProject { get; set; }
+		bool Logging { get; set; }
+		int LoggingLevel { get; set; }
+		void RegisterCallback(Action<string> a);
+	}
+
 	public interface ISolution
 	{
 		List<ITreeItem> ProjectItems

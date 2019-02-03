@@ -1,9 +1,7 @@
-﻿using EnvDTE;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.RegularExpressions;
-using Microsoft.VisualStudio;
-using Microsoft.VisualStudio.Shell;
 
 namespace CustomTabNames
 {
@@ -151,7 +149,7 @@ namespace CustomTabNames
 		//
 		public static string ParentDir(IDocument d)
 		{
-			var parts = Utilities.SplitPath(d.Path);
+			var parts = SplitPath(d.Path);
 			if (parts.Length < 2)
 				return "";
 
@@ -162,7 +160,7 @@ namespace CustomTabNames
 		//
 		public static string Filename(IDocument d)
 		{
-			var parts = Utilities.SplitPath(d.Path);
+			var parts = SplitPath(d.Path);
 			if (parts.Length == 0)
 				return "";
 
@@ -248,6 +246,17 @@ namespace CustomTabNames
 			}
 
 			return parts;
+		}
+
+		// splits the given path on slash and backslash
+		//
+		public static string[] SplitPath(string path)
+		{
+			var seps = new char[] {
+				Path.DirectorySeparatorChar,
+				Path.AltDirectorySeparatorChar };
+
+			return path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
 		}
 	}
 }

@@ -1,8 +1,4 @@
-﻿using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
-using EnvDTE;
-
-namespace CustomTabNames
+﻿namespace CustomTabNames
 {
 	// manages the various events for opening documents and windows, and fires
 	// DocumentChanged when they do

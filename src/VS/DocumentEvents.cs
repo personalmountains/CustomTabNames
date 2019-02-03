@@ -76,9 +76,9 @@ namespace CustomTabNames
 
 			Trace(
 				"OnBeforeDocumentWindowShow: {0}",
-				Utilities.DebugWindowFrameName(wf));
+				VSDocument.DebugWindowFrameName(wf));
 
-			var d = Utilities.DocumentFromWindowFrame(wf);
+			var d = VSDocument.DocumentFromWindowFrame(wf);
 			if (d == null)
 			{
 				Error("OnBeforeDocumentWindowShow: frame has no document");
@@ -124,7 +124,7 @@ namespace CustomTabNames
 				"oldId={2} oldPath={3} newId={4} newPath={5}",
 				cookie, atts, oldId, oldPath, newId, newPath);
 
-			var d = Utilities.DocumentFromCookie(cookie);
+			var d = VSDocument.DocumentFromCookie(cookie);
 			if (d == null)
 			{
 				// this happens when renaming a C# project, which is handled

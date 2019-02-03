@@ -51,7 +51,6 @@
     <Compile Include="src\Logger.cs" />
     <Compile Include="src\Options.cs" />
     <Compile Include="src\Strings.cs" />
-    <Compile Include="src\Utilities.cs" />
     <Compile Include="src\Variables.cs" />
     <Compile Include="src\VS\DocumentEvents.cs" />
     <Compile Include="src\VS\EventHandlersBases.cs" />

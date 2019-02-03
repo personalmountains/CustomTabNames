@@ -1,7 +1,4 @@
-﻿using Microsoft.VisualStudio.Shell.Interop;
-using Microsoft.VisualStudio.Shell;
-using System;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace CustomTabNames
 {
