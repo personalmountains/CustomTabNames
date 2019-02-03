@@ -2,12 +2,6 @@
 
 namespace CustomTabNames
 {
-	public interface ILoggerBackend
-	{
-		void Output(string s);
-	}
-
-
 	// logs strings to the Output window, in a specific pane; levels are not
 	// implemented yet
 	//

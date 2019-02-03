@@ -10,3 +10,6 @@
 /Tests/data/cpp/*.user
 /Tests/IntegrationTests/bin
 /Tests/IntegrationTests/obj
+/*.user
+/Tests/UnitTests/bin
+/Tests/UnitTests/obj

@@ -3,6 +3,12 @@ using System.Collections.Generic;
 
 namespace CustomTabNames
 {
+	public interface ILoggerBackend
+	{
+		void Output(string s);
+	}
+
+
 	// the options backend is a bit messy because VSOptions already inherits
 	// from DialogPage, so it has to use an interface
 	//
