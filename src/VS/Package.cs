@@ -53,7 +53,7 @@ namespace CustomTabNames
 		{
 			await JoinableTaskFactory.SwitchToMainThreadAsync(ct);
 
-			if (SolutionService == null || RDT == null)
+			if (Solution == null || RDT == null)
 			{
 				Main.Logger.Error("bailing out");
 				return;
@@ -66,7 +66,7 @@ namespace CustomTabNames
 				new VSDocumentManager());
 		}
 
-		public IVsSolution SolutionService
+		public IVsSolution Solution
 		{
 			get
 			{

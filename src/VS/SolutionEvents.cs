@@ -83,7 +83,7 @@ namespace CustomTabNames
 			ThreadHelper.ThrowIfNotOnUIThread();
 			Trace("registering for events");
 
-			var e = Package.Instance.SolutionService
+			var e = Package.Instance.Solution
 				.AdviseSolutionEvents(this, out cookie);
 
 			if (e != VSConstants.S_OK)
@@ -123,7 +123,7 @@ namespace CustomTabNames
 				return;
 			}
 
-			var e = Package.Instance.SolutionService
+			var e = Package.Instance.Solution
 				.UnadviseSolutionEvents(cookie);
 
 			if (e != VSConstants.S_OK)

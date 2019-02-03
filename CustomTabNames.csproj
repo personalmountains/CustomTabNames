@@ -57,9 +57,13 @@
     <Compile Include="src\VS\HierarchyEvents.cs" />
     <Compile Include="src\VS\Package.cs" />
     <Compile Include="src\VS\SolutionEvents.cs" />
+    <Compile Include="src\VS\VSDocument.cs" />
     <Compile Include="src\VS\VSDocumentManager.cs" />
+    <Compile Include="src\VS\VSLogger.cs" />
     <Compile Include="src\VS\VSOptions.cs" />
-    <Compile Include="src\VS\VSWrappers.cs" />
+    <Compile Include="src\VS\VSProject.cs" />
+    <Compile Include="src\VS\VSSolution.cs" />
+    <Compile Include="src\VS\VSTreeItem.cs" />
     <Compile Include="src\Wrappers.cs" />
   </ItemGroup>
   <ItemGroup>
