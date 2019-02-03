@@ -5,7 +5,12 @@ using System.Text.RegularExpressions;
 
 namespace CustomTabNames
 {
-	using Dict = Dictionary<string, Func<IDocument, string>>;
+	using Dict = Dictionary<string, IVariable>;
+
+	public interface IVariable
+	{
+		string Expand(IDocument d);
+	}
 
 	public sealed class Variables
 	{
@@ -14,23 +19,15 @@ namespace CustomTabNames
 		private static readonly Dict Dictionary = new Dict()
 		{
 			// variable names must be [a-zA-Z]
-			{"ProjectName",    ProjectName},
-			{"ParentDir",      ParentDir},
-			{"Filename",       Filename},
-			{"FullPath",       FullPath},
-			{"FolderPath",     FolderPath},
-			{"ParentFolder",   ParentFolder}
+			{"ProjectName",    new ProjectName()},
+			{"ParentDir",      new ParentDir()},
+			{"Filename",       new Filename()},
+			{"FullPath",       new FullPath()},
+			{"FolderPath",     new FolderPath()},
+			{"ParentFolder",   new ParentFolder()}
 			// update Strings.OptionTemplateDescription when changing this list
 		};
 
-
-		private static Options Options
-		{
-			get
-			{
-				return Main.Instance.Options;
-			}
-		}
 
 		private static Logger Logger
 		{
@@ -83,7 +80,7 @@ namespace CustomTabNames
 				// variable is in the dictionary
 
 				// expand it
-				string s = v(d);
+				string s = v.Expand(d);
 
 				// don't append the text if the result was empty
 				if (s.Length != 0)
@@ -118,86 +115,12 @@ namespace CustomTabNames
 
 			return ns;
 		}
+	}
 
 
-		// returns the name of the document's project, or an empty string; this
-		// can happen for external files, includes, etc.
-		//
-		public static string ProjectName(IDocument d)
-		{
-			if (Options.IgnoreSingleProject)
-			{
-				if (Main.Instance.Solution.HasSingleProject)
-					return "";
-			}
-
-			if (Options.IgnoreBuiltinProjects)
-			{
-				if (d.Project?.IsBuiltIn ?? false)
-					return "";
-			}
-
-			var p = d?.Project;
-			if (p == null)
-				return "";
-
-			return p.Name;
-		}
-
-		// returns the parent directory of the document's file with a slash at
-		// the end, or an empty string; this happens for files in the root
-		//
-		public static string ParentDir(IDocument d)
-		{
-			var parts = SplitPath(d.Path);
-			if (parts.Length < 2)
-				return "";
-
-			return parts[parts.Length - 2] + "/";
-		}
-
-		// returns the last component of the full path, or an empty string
-		//
-		public static string Filename(IDocument d)
-		{
-			var parts = SplitPath(d.Path);
-			if (parts.Length == 0)
-				return "";
-
-			return parts[parts.Length - 1];
-		}
-
-		// returns the full path of the document
-		//
-		public static string FullPath(IDocument d)
-		{
-			return d.Path;
-		}
-
-		// walks the folders up from the document to the project root and joins
-		// them with slashes and appends a slash at the end, or returns an empty
-		// string if the document is directly in the project root
-		//
-		public static string FolderPath(IDocument d)
-		{
-			return string.Join("/", FolderPathParts(d));
-		}
-
-		// returns the name of the document's parent folder, or an empty string
-		//
-		public static string ParentFolder(IDocument d)
-		{
-			var s = "";
-
-			var parts = FolderPathParts(d);
-			if (parts.Count > 0)
-				s = parts[parts.Count - 1];
-
-			return s;
-		}
-
-
-		private static List<string> FolderPathParts(IDocument d)
+	class VariableUtilities
+	{
+		public static List<string> FolderPathParts(IDocument d)
 		{
 			var parts = new List<string>();
 
@@ -231,6 +154,106 @@ namespace CustomTabNames
 				Path.AltDirectorySeparatorChar };
 
 			return path.Split(seps, StringSplitOptions.RemoveEmptyEntries);
+		}
+	}
+
+
+	// returns the name of the document's project, or an empty string; this
+	// can happen for external files, includes, etc.
+	//
+	class ProjectName : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			if (Main.Instance.Options.IgnoreSingleProject)
+			{
+				if (Main.Instance.Solution.HasSingleProject)
+					return "";
+			}
+
+			if (Main.Instance.Options.IgnoreBuiltinProjects)
+			{
+				if (d.Project?.IsBuiltIn ?? false)
+					return "";
+			}
+
+			var p = d?.Project;
+			if (p == null)
+				return "";
+
+			return p.Name;
+		}
+	}
+
+
+	// returns the parent directory of the document's file with a slash at
+	// the end, or an empty string; this happens for files in the root
+	//
+	class ParentDir : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			var parts = VariableUtilities.SplitPath(d.Path);
+			if (parts.Length < 2)
+				return "";
+
+			return parts[parts.Length - 2] + "/";
+		}
+	}
+
+
+	// returns the last component of the full path, or an empty string
+	//
+	class Filename : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			var parts = VariableUtilities.SplitPath(d.Path);
+			if (parts.Length == 0)
+				return "";
+
+			return parts[parts.Length - 1];
+		}
+	}
+
+
+	// returns the full path of the document
+	//
+	class FullPath : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			return d.Path;
+		}
+	}
+
+
+	// walks the folders up from the document to the project root and joins
+	// them with slashes and appends a slash at the end, or returns an empty
+	// string if the document is directly in the project root
+	//
+	class FolderPath : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			return string.Join("/", VariableUtilities.FolderPathParts(d));
+		}
+	}
+
+
+	// returns the name of the document's parent folder, or an empty string
+	//
+	class ParentFolder : IVariable
+	{
+		public string Expand(IDocument d)
+		{
+			var s = "";
+
+			var parts = VariableUtilities.FolderPathParts(d);
+			if (parts.Count > 0)
+				s = parts[parts.Count - 1];
+
+			return s;
 		}
 	}
 }

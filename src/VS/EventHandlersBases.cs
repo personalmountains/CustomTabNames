@@ -3,9 +3,6 @@ using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 using System;
 
-namespace CustomTabNames
-{
-
 // these are used as base classes in EventHandlers
 //
 // they define delegates and also implement the methods that are not
@@ -18,38 +15,36 @@ namespace CustomTabNames
 //      when an action fires more than one event, the one in brackets
 //      is ignored
 //
-// +----------+------------------------------+--------------------------------+
-// |          | C++                          | C#                             |
-// +----------+------------------------------+--------------------------------+
-// | add      | S.OnAfterOpenProject         | S.OnAfterOpenProject           |
-// | project  |                              |                                |
-// +----------+------------------------------+--------------------------------+
-// | remove   | S.OnBeforeCloseProject       | S.OnBeforeCloseProject         |
-// | project  |                              |                                |
-// +----------+------------------------------+--------------------------------+
-// | rename   | H.OnPropertyChanged          | H.OnPropertyChanged            |
-// | project  |                              | (D.OnAfterAttributeChangeEx)   |
-// +----------+------------------------------+--------------------------------+
-// | rename   | H.OnPropertyChanged          | H.OnItemAdded                  |
-// | folder   |                              |                                |
-// +----------+------------------------------+--------------------------------+
-// | move     | H.OnItemAdded                | H.OnItemAdded                  |
-// | folder   |                              |                                |
-// +----------+------------------------------+--------------------------------+
-// | rename   | D.OnAfterAttributeChangeEx   | D.OnAfterAttributeChangeEx     |
-// | file     | (H.OnPropertyChanged x3)     | (H.OnItemAdded)                |
-// +----------+------------------------------+--------------------------------+
-// | move     | H.OnItemAdded                | D.OnAfterAttributeChangeEx     |
-// | file     |                              | (H.OnItemAdded)                |
-// +----------+------------------------------+--------------------------------+
-// | open     | D.OnBeforeDocumentWindowShow | D.OnBeforeDocumentWindowShow   |
-// | file     |                              |                                |
-// +----------+------------------------------+--------------------------------+
+// +---------+------------------------------+------------------------------+
+// |         | C++                          | C#                           |
+// +---------+------------------------------+------------------------------+
+// | add     | S.OnAfterOpenProject         | S.OnAfterOpenProject         |
+// | project |                              |                              |
+// +---------+------------------------------+------------------------------+
+// | remove  | S.OnBeforeCloseProject       | S.OnBeforeCloseProject       |
+// | project |                              |                              |
+// +---------+------------------------------+------------------------------+
+// | rename  | H.OnPropertyChanged          | H.OnPropertyChanged          |
+// | project |                              | (D.OnAfterAttributeChangeEx) |
+// +---------+------------------------------+------------------------------+
+// | rename  | H.OnPropertyChanged          | H.OnItemAdded                |
+// | folder  |                              |                              |
+// +---------+------------------------------+------------------------------+
+// | move    | H.OnItemAdded                | H.OnItemAdded                |
+// | folder  |                              |                              |
+// +---------+------------------------------+------------------------------+
+// | rename  | D.OnAfterAttributeChangeEx   | D.OnAfterAttributeChangeEx   |
+// | file    | (H.OnPropertyChanged x3)     | (H.OnItemAdded)              |
+// +---------+------------------------------+------------------------------+
+// | move    | H.OnItemAdded                | D.OnAfterAttributeChangeEx   |
+// | file    |                              | (H.OnItemAdded)              |
+// +---------+------------------------------+------------------------------+
+// | open    | D.OnBeforeDocumentWindowShow | D.OnBeforeDocumentWindowShow |
+// | file    |                              |                              |
+// +---------+------------------------------+------------------------------+
 //
-//
-//
-
-
+namespace CustomTabNames
+{
 	public abstract class EventHandlersBase : LoggingContext
 	{
 		public delegate void ProjectHandler(ITreeItem h);
