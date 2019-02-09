@@ -123,8 +123,7 @@ namespace CustomTabNames
 				}
 			}
 		}
-
-
+			   
 		[Category(Strings.OptionsCategory)]
 		[DisplayName(Strings.OptionLogging)]
 		[Description(Strings.OptionLoggingDescription)]

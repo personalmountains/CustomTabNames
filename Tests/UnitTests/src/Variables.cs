@@ -1,39 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using EnvDTE;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CustomTabNames.Tests
 {
-	[TestClass]
-	public class Global
-	{
-		static public Main Main { get; private set; }
-		static public TestOptions Options { get; private set; }
-		static public TestLogger Logger { get; private set; }
-		static public TestSolution Solution { get; private set; }
-		static public TestDocumentManager DocumentManager { get; private set; }
-
-		[AssemblyInitialize]
-		public static void StartTests(TestContext _)
-		{
-			Options = new TestOptions();
-			Logger = new TestLogger();
-			Solution = new TestSolution();
-			DocumentManager = new TestDocumentManager();
-
-			Options.Enabled = false;
-			Main = new Main(Options, Logger, Solution, DocumentManager);
-		}
-
-		[AssemblyCleanup]
-		public static void StopTests()
-		{
-		}
-	}
-
-
 	[TestClass]
 	public class VariableTests
 	{

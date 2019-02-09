@@ -46,7 +46,7 @@ Doesn't expand `$(ProjectName)` if there's only one project in the solution. Def
 If true, a new entry "CustomTabNames" is created in the Output window with logs from this extension. Defaults to `false`.
 
 #### LoggingLevel
-Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace 4=Variable expansions. Ignored if `Logging` is `false`. Defaults to 2 (Log).
+Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace, 4=Variable expansions. Ignored if `Logging` is `false`. Defaults to 2 (Log).
 
 #### Template
 The template string used to generate captions. Defaults to `$(ProjectName ':')$(FolderPath)$(Filename)`.

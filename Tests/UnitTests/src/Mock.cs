@@ -15,15 +15,129 @@ namespace CustomTabNames.Tests
 
 	public class TestOptions : IOptionsBackend
 	{
-		public bool Enabled { get; set; } = Options.Defaults.Enabled;
-		public string Template { get; set; } = Options.Defaults.Template;
-		public bool IgnoreBuiltinProjects { get; set; } = Options.Defaults.IgnoreBuiltinProjects;
-		public bool IgnoreSingleProject { get; set; } = Options.Defaults.IgnoreSingleProject;
-		public bool Logging { get; set; } = Options.Defaults.Logging;
-		public int LoggingLevel { get; set; } = Options.Defaults.LoggingLevel;
+		private Action<string> callback;
+
+		private bool enabled = Options.Defaults.Enabled;
+		private string template = Options.Defaults.Template;
+		private bool ignoreBuiltinProjects =
+			Options.Defaults.IgnoreBuiltinProjects;
+		private bool ignoreSingleProject =
+			Options.Defaults.IgnoreSingleProject;
+		private bool logging = Options.Defaults.Logging;
+		private int loggingLevel = Options.Defaults.LoggingLevel;
 
 		public void RegisterCallback(Action<string> a)
 		{
+			callback = a;
+		}
+
+		public bool Enabled
+		{
+			get
+			{
+				return enabled;
+			}
+
+			set
+			{
+				if (enabled != value)
+				{
+					enabled = value;
+					callback?.Invoke("Enabled");
+				}
+			}
+		}
+
+		public string Template
+		{
+			get
+			{
+				return template;
+			}
+
+			set
+			{
+				var v = (value.Length == 0 ? Options.Defaults.Template : value);
+
+				if (template != v)
+				{
+					template = v;
+					callback?.Invoke("Template");
+				}
+			}
+		}
+
+		public bool IgnoreBuiltinProjects
+		{
+			get
+			{
+				return ignoreBuiltinProjects;
+			}
+
+			set
+			{
+				if (ignoreBuiltinProjects != value)
+				{
+					ignoreBuiltinProjects = value;
+					callback?.Invoke("IgnoreBuiltinProjects");
+				}
+			}
+		}
+
+		public bool IgnoreSingleProject
+		{
+			get
+			{
+				return ignoreSingleProject;
+			}
+
+			set
+			{
+				if (ignoreSingleProject != value)
+				{
+					ignoreSingleProject = value;
+					callback?.Invoke("IgnoreSingleProject");
+				}
+			}
+		}
+
+		public bool Logging
+		{
+			get
+			{
+				return logging;
+			}
+
+			set
+			{
+				if (logging != value)
+				{
+					logging = value;
+					callback?.Invoke("Logging");
+				}
+			}
+		}
+
+		public int LoggingLevel
+		{
+			get
+			{
+				return loggingLevel;
+			}
+
+			set
+			{
+				if (value < 0)
+					value = 0;
+				else if (value > 4)
+					value = 4;
+
+				if (loggingLevel != value)
+				{
+					loggingLevel = value;
+					callback?.Invoke("LoggingLevel");
+				}
+			}
 		}
 	}
 
@@ -44,7 +158,7 @@ namespace CustomTabNames.Tests
 		{
 			get
 			{
-				return null;
+				return new List<ITreeItem>();
 			}
 		}
 
@@ -52,7 +166,7 @@ namespace CustomTabNames.Tests
 		{
 			get
 			{
-				return null;
+				return new List<IDocument>();
 			}
 		}
 
