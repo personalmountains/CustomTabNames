@@ -82,27 +82,55 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				if (GetIsFolder(Hierarchy, ID))
-				{
-					// sigh
-					//
-					// some of the built-in projects like miscellaneous items
-					// seem to behave both as projects and folders
-					//
-					// the GetIsFolder() check above checks for physical/virtual
-					// folders and works fine for regular projects, where the
-					// root project item doesn't say it's a folder (cause it
-					// ain't)
-					//
-					// but when an external file is opened, it gets put in this
-					// magic miscellaneous items project, which _does_ report
-					// its type as a virtual folder, event though it's the root
-					// "project"
-					if (ID != RootID)
-						return true;
-				}
+				if (!GetIsFolder(Hierarchy, ID))
+					return false;
 
-				return false;
+				// VS reports that the item is a folder, but it might not be
+
+				// there are two important magic things:
+				//
+				//   1) files that are considered external dependencies
+				//      (somehow included by files in the project) are put
+				//      in an "External dependencies" folder, which is a
+				//      direct child of the project
+				//
+				//      this folder doesn't seem to have any recognizable type,
+				//      it's just a guid
+				//
+				//   2) other files that are not dependencies are put in a
+				//      a separate project called "Miscellaneous files", which
+				//      reports itself as being a folder instead of a project
+				//
+				// so both the external dependencies folder and the misc files
+				// projects are magic
+				//
+				// however, if "hide external dependencies folder" is enabled,
+				// the magic folder above is still a child of the project in the
+				// project hierarchy, but checking EnvDTE.Document.ProjectItem
+				// on any file returns null (see also VSDocument.Project)
+				//
+
+				// so the first thing to check is whether the ID is RootID, in
+				// which case this item is actual a project, not a folder, since
+				// only projects can be roots
+				if (ID == RootID)
+					return false;
+
+				// even if the item is not the root and its type was a folder,
+				// it could be the magic external dependencies folder
+				//
+				// unfortunately, there doesn't seem to be a way of figuring
+				// this out, except to check if the name is a guid and interpret
+				// that as the "external dependencies" folder
+				//
+				// this will generate false positives, hopefully not too
+				// many people use guids as folder names
+				if (System.Guid.TryParse(Name, out var r))
+					return false;
+
+				// VS says it's a folder, it's not a project, and its name is
+				// not a guid, assume it's actually a folder
+				return true;
 			}
 		}
 

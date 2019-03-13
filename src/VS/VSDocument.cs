@@ -50,7 +50,31 @@ namespace CustomTabNames
 			get
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
-				return new VSProject(d.ProjectItem.ContainingProject);
+
+				var pi = d.ProjectItem;
+
+				// see VSTreeItem.IsFolder for all the gory details
+				//
+				// this only seems to happen for external dependencies when
+				// the option "hide external dependencies folder" is enabled
+				//
+				// it's tempting to force this to return the misc project, since
+				// it seems to be the only case right now; by returning null,
+				// some external files won't expand $(ProjectName) at all even
+				// if "ignore built-in projects" is false
+				//
+				// however, there might be other cases where ProjectItem is
+				// null, so just be safe (for now, perhaps) and return null
+				//
+				// the only case where this is problematic is when built-in
+				// projects are not ignored and either 1) there's more than one
+				// project, or 2) single project is disabled
+				//
+				// in this case, ProjectName still won't expand to anything
+				if (pi == null)
+					return null;
+
+				return new VSProject(pi.ContainingProject);
 			}
 		}
 

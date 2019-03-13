@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
@@ -19,30 +20,88 @@ namespace CustomTabNames
 			{
 				ThreadHelper.ThrowIfNotOnUIThread();
 
-				try
-				{
-					var e = Package.Instance.Solution.GetProperty(
-						(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
+				var n = TentativeProjectCount();
 
-					if (e != VSConstants.S_OK || !(o is int))
+				// simple case
+				if (n == 0)
+					return true;
+
+				// VSPROPID_ProjectCount can include virtual projects,
+				// such as misc files
+				//
+				// filtering those projects requires getting all the projects
+				// and checking if they're built-in, but that can take a long
+				// time when many projects are loaded
+				//
+				// assume that anything over 10 has at least 2 real projects;
+				// lower values can afford to loop
+				if (n >= 10)
+					return false;
+
+				int realN = 0;
+
+				ForEachProject(__VSENUMPROJFLAGS.EPF_ALLINSOLUTION, (h) =>
+				{
+					ThreadHelper.ThrowIfNotOnUIThread();
+
+					var e = h.GetProperty(
+						(uint)VSConstants.VSITEMID.Root,
+						(int)__VSHPROPID.VSHPROPID_ExtObject, out var po);
+
+					if (e != VSConstants.S_OK)
 					{
 						ErrorCode(
-							e, "HasSingleProject: failed to get project count");
+							e, "HasSingleProject: failed to get " +
+							"ExtObject for project hierarchy");
 
-						return false;
+						return;
 					}
 
-					int i = (int)o;
-					return (i == 1);
-				}
-				catch (Exception e)
-				{
-					Error(
-						"HasSingleProject: failed to get project count, {0}",
-						e.Message);
+					if (po is Project p)
+					{
+						var vsp = new VSProject(p);
 
-					return false;
+						if (!vsp.IsBuiltIn)
+							++realN;
+					}
+					else
+					{
+						Error("HasSingleProject: item is not a project");
+					}
+				});
+
+				return (realN <= 1);
+
+			}
+		}
+
+		private int TentativeProjectCount()
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			try
+			{
+				var e = Package.Instance.Solution.GetProperty(
+					(int)__VSPROPID.VSPROPID_ProjectCount, out var o);
+
+				if (e != VSConstants.S_OK || !(o is int))
+				{
+					ErrorCode(
+						e, "TentativeProjectCount: " +
+						"failed to get project count");
+
+					return -1;
 				}
+
+				return (int)o;
+			}
+			catch (Exception e)
+			{
+				Error(
+					"HasSingleProject: failed to get project count, {0}",
+					e.Message);
+
+				return -1;
 			}
 		}
 
@@ -54,56 +113,10 @@ namespace CustomTabNames
 
 				var list = new List<ITreeItem>();
 
-				Guid guid = Guid.Empty;
-
-				// getting enumerator
-				var e = Package.Instance.Solution.GetProjectEnum(
-					(uint)__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION,
-					ref guid, out var enumerator);
-
-				if (e != VSConstants.S_OK)
+				ForEachProject(__VSENUMPROJFLAGS.EPF_LOADEDINSOLUTION, (p) =>
 				{
-					ErrorCode(
-						e, "ForEachProjectHierarchy: GetProjectEnum failed");
-
-					return list;
-				}
-
-				// will store one hierarchy at a time, but Next() still requires
-				// an array
-				IVsHierarchy[] hierarchies = new IVsHierarchy[1] { null };
-
-				enumerator.Reset();
-
-				while (true)
-				{
-					e = enumerator.Next(1, hierarchies, out var fetched);
-
-					if (e == VSConstants.S_FALSE || fetched != 1)
-					{
-						// done
-						break;
-					}
-
-					if (e != VSConstants.S_OK)
-					{
-						ErrorCode(
-							e, "ForEachProjectHierarchy: enum next failed");
-
-						break;
-					}
-
-
-					var h = hierarchies[0];
-
-					if (h == null)
-					{
-						// shouldn't happen
-						continue;
-					}
-
-					list.Add(new VSTreeItem(h));
-				}
+					list.Add(new VSTreeItem(p));
+				});
 
 				return list;
 			}
@@ -129,10 +142,8 @@ namespace CustomTabNames
 					return list;
 				}
 
-				// will store one cookie at a time, but Next() still requires an
-				// array
+				// one at a time
 				uint[] cookies = new uint[1] { VSConstants.VSCOOKIE_NIL };
-
 				enumerator.Reset();
 
 				while (true)
@@ -201,6 +212,58 @@ namespace CustomTabNames
 				}
 
 				return list;
+			}
+		}
+
+		private void ForEachProject(
+			__VSENUMPROJFLAGS type, Action<IVsHierarchy> f)
+		{
+			ThreadHelper.ThrowIfNotOnUIThread();
+
+			var list = new List<IVsHierarchy>();
+
+			Guid guid = Guid.Empty;
+
+			// getting enumerator
+			var e = Package.Instance.Solution.GetProjectEnum(
+				(uint)type, ref guid, out var enumerator);
+
+			if (e != VSConstants.S_OK)
+			{
+				ErrorCode(e, "GetProjectItems: GetProjectEnum failed");
+				return;
+			}
+
+			// one at a time
+			IVsHierarchy[] hierarchies = new IVsHierarchy[1] { null };
+			enumerator.Reset();
+
+			while (true)
+			{
+				e = enumerator.Next(1, hierarchies, out var fetched);
+
+				if (e == VSConstants.S_FALSE || fetched != 1)
+				{
+					// done
+					break;
+				}
+
+				if (e != VSConstants.S_OK)
+				{
+					ErrorCode(e, "GetProjectItems: enum next failed");
+					break;
+				}
+
+
+				var h = hierarchies[0];
+
+				if (h == null)
+				{
+					// shouldn't happen
+					continue;
+				}
+
+				f(h);
 			}
 		}
 	}
