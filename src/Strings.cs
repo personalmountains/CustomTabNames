@@ -15,7 +15,7 @@
 		public const string ExtensionGuid = "bee6c21e-fbf8-49b1-a0f8-89d7dfa732ee";
 		public const string ExtensionName = "CustomTabNames";
 		public const string ExtensionDescription = "Customizes editor tab names";
-		public const string ExtensionVersion = "1.0";
+		public const string ExtensionVersion = "1.1";
 		public const string AssemblyVersion = ExtensionVersion + ".0.0";
 		public const string Company = "personalmountains";
 		public const string Copyright = "CC0 1.0 Universal";
