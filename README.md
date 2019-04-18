@@ -5,7 +5,7 @@ This extension allows for changing the caption on editor tabs based on a templat
 ## Template
 The template is made of variables with the form `$(VariableName)`. Those are replaced by the appropriate value. Anything outside variables is kept verbatim.
 
-Variables can also contain a single-quoted string: `$(VariableName 'string')`. The string will be appended to the variable expansion if it is not empty. This is useful for putting a separator only if the variable is not empty. For example, `$(ProjectName):$(Filename)` will expand to `project:file.ext` if the file is in a project, but to `:file.exe` if it's not. Putting the colon inside the variable name fixes it: `$(ProjectName ':')$(Filename)` expands to `file.exe` if the file is not in a project.
+Variables can also contain a single-quoted string: `$(VariableName 'string')`. The string will be appended to the variable expansion if it is not empty. This is useful for putting a separator only if the variable is not empty. For example, `$(ProjectName):$(Filename)` will expand to `project:file.ext` if the file is in a project, but to `:file.ext` if it's not. Putting the colon inside the variable name fixes it: `$(ProjectName ':')$(Filename)` expands to `file.ext` if the file is not in a project.
 
 ## Variables
 These variables can be used in the template:
