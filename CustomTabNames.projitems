@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>2d8b9adf-dd7b-4be0-aad0-7ffb3ae14565</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>CustomTabNames</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)src\DocumentManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Logger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Main.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Options.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Strings.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Variables.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\DocumentEvents.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\EventHandlersBases.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\HierarchyEvents.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\Package.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\SolutionEvents.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSDocument.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSDocumentManager.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSLogger.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSOptions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSProject.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSSolution.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSTreeItem.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Wrappers.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" />
+  </ItemGroup>
+</Project>

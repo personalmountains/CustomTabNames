@@ -7,7 +7,7 @@ namespace CustomTabNames.Tests
 	public class Global
 	{
 		private const string SolutionPath =
-			"..\\..\\..\\data\\test.sln";
+			"..\\..\\..\\..\\..\\Tests\\data\\test.sln";
 
 		public static VS VS { get; private set; }
 		public static Operations Operations { get; private set; }
