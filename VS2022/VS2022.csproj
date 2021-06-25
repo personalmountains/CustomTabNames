@@ -13,8 +13,8 @@
     <ProjectGuid>{EDE6C4F3-1FFC-4DFC-A994-B61E53A33A30}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VS2022</RootNamespace>
-    <AssemblyName>VS2022</AssemblyName>
+    <RootNamespace>CustomTabNames</RootNamespace>
+    <AssemblyName>CustomTabNames</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <GeneratePkgDefFile>true</GeneratePkgDefFile>
     <UseCodebase>true</UseCodebase>
