@@ -24,9 +24,15 @@ namespace CustomTabNames.Tests
 		const bool ShowWindow = true;
 		const bool CloseAfter = false;
 
+#if CUSTOM_TAB_NAMES_2019
 		const string ProcessPath =
 			@"C:\Program Files (x86)\Microsoft Visual Studio\2019\Preview\" +
 			@"Common7\IDE\devenv.exe";
+#elif CUSTOM_TAB_NAMES_2022
+		const string ProcessPath =
+			@"C:\Program Files\Microsoft Visual Studio\2022\Preview\" +
+			@"Common7\IDE\devenv.exe";
+#endif
 
 		const string ProcessArguments = "/Embedding /rootsuffix Exp";
 
