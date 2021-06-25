@@ -14,3 +14,7 @@
 /Tests/UnitTests/bin
 /Tests/UnitTests/obj
 /Tests/UnitTests/*.user
+/VS2019/bin
+/VS2019/obj
+/VS2022/bin
+/VS2022/obj

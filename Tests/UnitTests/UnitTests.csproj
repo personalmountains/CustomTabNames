@@ -60,7 +60,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\CustomTabNames.csproj">
+    <ProjectReference Include="..\..\VS2019\VS2019.csproj">
       <Project>{9a9c0a8e-553c-4c44-b64f-e3304e755cda}</Project>
       <Name>CustomTabNames</Name>
     </ProjectReference>
