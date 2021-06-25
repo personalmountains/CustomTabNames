@@ -18,3 +18,9 @@
 /VS2019/obj
 /VS2022/bin
 /VS2022/obj
+/VS2019/Tests/IntegrationTests/bin
+/VS2019/Tests/IntegrationTests/obj
+/VS2019/Tests/UnitTests/bin
+/VS2019/Tests/UnitTests/obj
+/Tests/IntegrationTests/*.user
+/VS2019/*.user
