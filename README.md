@@ -52,7 +52,7 @@ Sets the maximum level to log. 0=Error, 1=Warn, 2=Log, 3=Trace, 4=Variable expan
 The template string used to generate captions. Defaults to `$(ProjectName ':')$(FolderPath)$(Filename)`.
 
 ## Building
-Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `bin/Release/CustomTabNames.vsix`, select the appropriate Visual Studio versions, and install. Tested on 2017 and 2019.
+Clone the project, open `CustomTabNames.sln`, build with the Release configuration. Open `CustomTabNames.vsix` from either `VS2019/bin/Release/` or `VS2022/bin/Release`, select the appropriate Visual Studio versions, and install. Tested on 2017, 2019 and 2022 P1.
 
 ## License
 CC0 1.0 Universal. This project is in the public domain.
