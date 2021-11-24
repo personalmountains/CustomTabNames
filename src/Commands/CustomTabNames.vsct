@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h"/>
+  <Extern href="vsshlids.h"/>
+  <Include href="CustomTabNamesGuid.vsct"/>
+
+  <Commands package="CustomTabNamesGuidPackage">
+    <Groups>
+      <Group guid="CustomTabNamesSet" id="CustomTabNamesMenuGroup" priority="0x0600">
+        <Parent guid="guidSHLMainMenu" id="IDM_VS_MENU_TOOLS"/>
+      </Group>
+    </Groups>
+
+    <Buttons>
+      <Button guid="CustomTabNamesSet" id="CustomTabNamesEnabledId" priority="0x0100" type="Button">
+        <Parent guid="CustomTabNamesSet" id="CustomTabNamesMenuGroup" />
+        <Icon guid="CustomTabNamesImages" id="CustomTabNamesIcon" />
+        <Strings>
+          <ButtonText>CustomTabNames</ButtonText>
+        </Strings>
+      </Button>
+    </Buttons>
+
+    <Bitmaps>
+      <Bitmap guid="CustomTabNamesImages" href="..\..\res\Commands.png" usedList="CustomTabNamesIcon"/>
+    </Bitmaps>
+  </Commands>
+
+  <Symbols>
+    <GuidSymbol name="CustomTabNamesSet" value="{408d4aff-1925-494c-922d-d360f2705ae2}">
+      <IDSymbol name="CustomTabNamesMenuGroup" value="0x1020" />
+      <IDSymbol name="CustomTabNamesEnabledId" value="0x0100" />
+    </GuidSymbol>
+
+    <GuidSymbol name="CustomTabNamesImages" value="{5a5ac2f3-642c-45a2-880a-93b596180991}" >
+      <IDSymbol name="CustomTabNamesIcon" value="1" />
+    </GuidSymbol>
+  </Symbols>
+</CommandTable>

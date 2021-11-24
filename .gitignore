@@ -29,3 +29,4 @@
 /VS2022/Tests/UnitTests/bin
 /VS2022/Tests/UnitTests/obj
 /packages
+/VS2022/*.user
