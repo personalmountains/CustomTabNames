@@ -255,17 +255,13 @@ namespace CustomTabNames.Tests
 
 			Operations.TryUntilTimeout(timeoutMs, () =>
 			{
-				try
-				{
-					if (!Operations.SetOption("Enabled", true))
-						throw new Failed("can't set Enabled option to true");
+			try
+			{
+					Operations.SetOption("Enabled", true);
 
 					// toggle it to make sure it logs something
-					if (!Operations.SetOption("Logging", false))
-						throw new Failed("can't set Logging option to false");
-
-					if (!Operations.SetOption("Logging", true))
-						throw new Failed("can't set Logging option to true");
+					Operations.SetOption("Logging", false);
+					Operations.SetOption("Logging", true);
 
 					var s = LoggingPaneText();
 

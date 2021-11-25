@@ -60,24 +60,43 @@ namespace CustomTabNames.Tests
 			return false;
 		}
 
-		public bool SetOption(string name, object value)
+		public bool GetBoolOption(string name)
 		{
 			try
 			{
 				var options = dte.Properties["CustomTabNames", "General"];
 				if (options == null)
-					return false;
+					throw new Failed("GetBoolOption: null options");
 
 				var o = options.Item(name);
 				if (o == null)
-					return false;
+					throw new Failed($"GetBoolOption: '{name}' not found");
+
+				return (bool)o.Value;
+			}
+			catch (Exception e)
+			{
+				throw new Failed("GetBoolOption: " + e.ToString());
+			}
+		}
+
+		public void SetOption(string name, object value)
+		{
+			try
+			{
+				var options = dte.Properties["CustomTabNames", "General"];
+				if (options == null)
+					throw new Failed("SetOption: null options");
+
+				var o = options.Item(name);
+				if (o == null)
+					throw new Failed($"SetOption: '{name}' not found");
 
 				o.Value = value;
-				return true;
 			}
-			catch (Exception)
+			catch (Exception e)
 			{
-				return false;
+				throw new Failed("SetOption: " + e.ToString());
 			}
 		}
 
@@ -233,9 +252,9 @@ namespace CustomTabNames.Tests
 
 			ActivateWindow(solutionExplorer);
 			SelectItem(fromItem);
-			DoCommand("Edit.Cut");
+			ExecuteCommand("Edit.Cut");
 			SelectItem(toItem);
-			DoCommand("Edit.Paste");
+			ExecuteCommand("Edit.Paste");
 
 			// folders become closed when they're moved around
 			ExpandAll();
@@ -321,17 +340,38 @@ namespace CustomTabNames.Tests
 			}
 		}
 
-		public void DoCommand(string s)
+		public void ExecuteCommand(string name)
 		{
 			try
 			{
-				dte.ExecuteCommand(s);
+				dte.ExecuteCommand(name);
 				Wait();
 			}
 			catch (Exception e)
 			{
-				throw new Failed("command '{0}' failed, {1}", s, e.Message);
+				throw new Failed("command '{0}' failed, {1}", name, e.Message);
 			}
+		}
+
+		public void ExecuteCommand(Guid guid, int id)
+		{
+			try
+			{
+				object customin = null;
+				object customout = null;
+
+				dte.Commands.Raise(guid.ToString(), id, ref customin, ref customout);
+				Wait();
+			}
+			catch (Exception e)
+			{
+				throw new Failed("command '{0}.{1}' failed, {2}", guid, id, e.Message);
+			}
+		}
+
+		public Command GetCommand(Guid guid, int id)
+		{
+			return dte.Commands.Item(guid.ToString(), id);
 		}
 
 		public void Wait(int ms=500)

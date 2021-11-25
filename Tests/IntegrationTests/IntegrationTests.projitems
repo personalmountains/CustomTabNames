@@ -9,6 +9,7 @@
     <Import_RootNamespace>IntegrationTests</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)src\CommandTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)src\CppTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)src\CsTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)src\Global.cs" />

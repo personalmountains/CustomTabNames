@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31410.223
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31710.8
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VS2019", "VS2019\VS2019.csproj", "{9A9C0A8E-553C-4C44-B64F-E3304E755CDA}"
 EndProject
@@ -73,6 +73,7 @@ Global
 		{2E8F1E33-52F8-4964-8ACC-3726E1501AE0}.Release|x86.ActiveCfg = Release|Any CPU
 		{2E8F1E33-52F8-4964-8ACC-3726E1501AE0}.Release|x86.Build.0 = Release|Any CPU
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Debug|x86.Build.0 = Debug|Any CPU
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -80,6 +81,7 @@ Global
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Release|x86.ActiveCfg = Release|Any CPU
 		{9513BF95-BFDA-4A6A-A187-ABFCA193B50A}.Release|x86.Build.0 = Release|Any CPU
 		{AF1DF772-28D9-4E74-AFDF-88E5263FC2D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF1DF772-28D9-4E74-AFDF-88E5263FC2D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF1DF772-28D9-4E74-AFDF-88E5263FC2D5}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{AF1DF772-28D9-4E74-AFDF-88E5263FC2D5}.Debug|x86.Build.0 = Debug|Any CPU
 		{AF1DF772-28D9-4E74-AFDF-88E5263FC2D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
