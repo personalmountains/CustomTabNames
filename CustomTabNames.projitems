@@ -28,6 +28,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSSolution.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)src\VS\VSTreeItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)src\Wrappers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)src\Commands\Enabled.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)README.md" />

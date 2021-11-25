@@ -139,11 +139,17 @@
 		//
 		private void OnDocumentChanged(IDocument d)
 		{
+			if (!Options.Enabled)
+				return;
+
 			FixCaption(d);
 		}
 
 		private void OnContainersChanged()
 		{
+			if (!Options.Enabled)
+				return;
+
 			Logger.Log("containers changed");
 			FixAllDocuments();
 		}

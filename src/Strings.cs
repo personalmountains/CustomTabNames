@@ -11,7 +11,8 @@
 	//
 	public static class Strings
 	{
-		// update .vsixmanifest if this changes
+		// if these guids change, update .vsixmanifest and all
+		// CustomTabNamesGuid.vsct files in the project folders
 #if CUSTOM_TAB_NAMES_2019
 		public const string ExtensionGuid = "bee6c21e-fbf8-49b1-a0f8-89d7dfa732ee";
 #elif CUSTOM_TAB_NAMES_2022

@@ -30,6 +30,7 @@ namespace CustomTabNames
 	[ProvideOptionPage(typeof(VSOptions), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, true)]
 	[ProvideProfile(typeof(VSOptions), Strings.ExtensionName, Strings.OptionsCategory, 0, 0, isToolsOptionPage: true)]
 	[Guid(Strings.ExtensionGuid)]
+	[ProvideMenuResource("Menus.ctmenu", 1)]
 	public sealed class Package : AsyncPackage
 	{
 		public static Package Instance { get; private set; }
@@ -64,6 +65,8 @@ namespace CustomTabNames
 			Main = new Main(
 				VSOptions, new VSLogger(), new VSSolution(),
 				new VSDocumentManager());
+
+			await Commands.Init.InitializeAllAsync(this);
 		}
 
 		public IVsSolution Solution

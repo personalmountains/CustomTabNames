@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<Symbols>
+    <GuidSymbol name="CustomTabNamesGuidPackage" value="{6fcb1c98-6501-4d92-80d2-6a0f88b03d37}" />
+</Symbols>
+</CommandTable>
